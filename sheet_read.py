@@ -3,6 +3,8 @@ from pandas import read_excel
 import re
 
 
+# TODO: convert \ to /
+
 def read_csv(path, sep=','):
     """
     :param path:    path to a csv-like file
