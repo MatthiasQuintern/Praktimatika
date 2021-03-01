@@ -141,7 +141,7 @@ class HomeMenu(nps.FormBaseNewWithMenus):
         self.status = self.add(nps.Textfield, rely=MAXY - 2 - self.BLANK_LINES_BASE, relx=1, editable=False)
 
         self.command = self.add(nps.TextCommandBox, name="command box", rely=MAXY - 1 - self.BLANK_LINES_BASE, relx=0, )
-        self.action_controller s= nps.ActionControllerSimple()
+        self.action_controller = nps.ActionControllerSimple()
 
 
         # Todo: unnecessary lines?
