@@ -26,7 +26,7 @@ def read_table(path, sep=","):
     """
     if re.fullmatch(r".*\.(xls|xlsx|xlsm|xlsb|odf|ods|odt)$", path):    # all pandas.read_excel supported filetypes
         try:
-            return read_excel(path, keep_default_na=False).values.tolist()
+            return read_excel(path, keep_default_na=False, header=None).values.tolist()
         except FileNotFoundError as ex:
             print(ex)
             return [[]]
@@ -74,20 +74,3 @@ def get_vectors(lis):
                         vectors.update({lis[i][j]: np.array(vec)})
 
     return vectors
-
-"""test = [
-    ["a", "b", "c", "d"],
-    [1,    1,   0,   5],
-    ["e",  2,   5,   None],
-    [69,  3,   None, None]
-]"""
-
-# enumerate try: except: else: finally:
-# @np.vectorize -> beliebige function auf np.arrays anwendbar machen
-# csv = read_csv("Isotherme.csv")
-# print(csv)
-# vecs = get_vectors(csv)
-# print(vecs)
-# f or name, vec in vecs.items():
-#    print(f"{name}:\tlength {len(vec)}")
-

@@ -15,14 +15,4 @@ def weighted_median(vals, uncerts):
     return median, u_inner, u_external
 
 
-@np.vectorize
-def calc(f, x):
-    return f.subs(x).evalf()
-"""
-value = np.array((1, 1, 1, 2))
-uncertainties = np.array((1, 1, 1, 2))
-
-print(weighted_median(value, uncertainties))
-
-"""
-
+print(weighted_median(np.array([200.5, 199.9]), np.array([2.7, 2.6])))

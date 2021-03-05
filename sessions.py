@@ -1,14 +1,12 @@
-import functions as fun
 import sympy as sy
-import sheet_read
-import Mittelwert as mw
+from tools import sheet_read
 import pickle as pk
-import numpy as np
 import re
 import sympy.abc as syv    # import all variables
 import os
 from constants import m_e
-
+import checks
+import numpy as np
 # from https://docs.sympy.org/latest/modules/functions/index.html
 FUNCTIONS = ['re', 'im', 'sign', 'Abs', 'arg', 'conjugate', 'polar_lift', 'periodic_argument', 'principal_branch',
              #'sympy.functions.elementary.trigonometric',
@@ -43,52 +41,18 @@ def load_session(path):
     return s
 
 
-def check_read_file(path):
-    """
-    Checks wether the 'path' is a file and if it can be read
-    :param path:    path to the file
-    :return:        (bool: readable, str: status)
-    """
-    valid = True
-    status = "File can be read"
-    if not os.path.isfile(path):
-        valid = False
-        status = "Invalid filepath: Not a file."
-    if not os.access(path, os.R_OK):
-        valid = False
-        status = "Invalid filepath: No read acces for file."
-    return valid, status
-
-
-def check_valid_fun(function: str):
-    # Todo: return useful info about what is wrong, also: add all def_funs, also: improve regex or remake with try: sympify(function)
-    valid = True
-    def_funs = "(cos)|(sin)|(tan)|(exp)"
-    fun_gr = def_funs + r"|[a-zA-Z0-9()]*"
-    allowed_chars = ""
-    # check if function matches smth like f = cos(x) + sin(4y)
-    # [a-z]+=(cos)|(sin)|(tan)|(exp)|[a-zA-Z0-9()]*([+\-*/]|(\*\*)(cos)|(sin)|(tan)|(exp)|[a-zA-Z0-9()]*)
-    if not re.fullmatch(r"[a-z_]+=(((cos|sin|tan|exp)\(.+\))|[a-zA-Z0-9()])(([+\-*/]|\*\*)((cos|sin|tan|exp)\(.+\))|[a-zA-Z0-9()])*", function.replace(" ", "")):
-    # if not re.fullmatch(r"[a-z]+="+fun_gr+r"([+\-*/]|(\*\*)"+fun_gr+r")*", function.replace(" ", "")):
-        valid = False
-    # check for unclosed/unopened paranthesis
-    if not function.count("(") == function.count(")"):
-        valid = False
-    return valid
-
-
 class PKTSession:
     def __init__(self, path):
         self.path = path
         self.funs = {}
         self.vars = {"x": syv.x, "y": syv.y, "z": syv.z}
-        self.constants = {"m_e": m_e}
+        self.consts = {"m_e": m_e}
         self.vecs = {}
         self.plots = {}
         self._dicts = {
                         "Functions": self.funs,
                         "Variables": self.vars,
-                        "Constants": self.constants,
+                        "Constants": self.consts,
                         "Vectors":   self.vecs,
                         "Plots":     self.vecs,
                        }
@@ -137,11 +101,11 @@ class PKTSession:
         """
         output = ""
         for function in funs:
-            if check_valid_fun(function):
+            if checks.is_valid_fun(function):
                 funlist = function.replace(" ", "").split("=")
                 # only add if "replace=True" or not already existing
                 if replace or funlist[0] not in self.funs:
-                    self.funs.update({funlist[0]: sy.sympify(funlist[1])})
+                    self.funs.update({funlist[0]: sy.sympify(funlist[1], evaluate=False)})
                     output += f"added {funlist[0]},"
                     if auto_vars:
                         output += self.check_fun_auto_add_var(funlist[1])
@@ -151,6 +115,29 @@ class PKTSession:
                 output += f"NOT added: {function.split('=')[0]} (invalid function),"
         return output.strip(",")
 
+    def add_vecs(self, vecs: iter, replace=True, dtype=float):
+        """
+        :param dtype:       data type
+        :param replace:     boolean wether to replace functions with conflicting names
+        :param vecs:        iterable with strings in this form: "v=[4, 2, 2.5]"
+        :return:            str, output for status bar
+        """
+        output = ""
+        for vector in vecs:
+            veclist = vector.replace(" ", "").split("=")
+            valid, array = checks.str_to_arr(veclist[1], dtype=dtype)
+            if valid:
+                # only add if "replace=True" or not already existing
+                if replace or veclist[0] not in self.vecs:
+                    self.vecs.update({veclist[0]: array})
+                    output += f"added {veclist[0]},"
+                else:
+                    output += f"NOT added: {veclist[0]} (already existing),"
+            else:
+                output += f"NOT added: {vector.split('=')[0]} (invalid vector),"
+        return output.strip(",")
+
+
     def check_fun_auto_add_var(self, fun, include_funs=True, include_constants=True):
         """
         Automatically adds a variable for strings in a function
@@ -158,15 +145,20 @@ class PKTSession:
         :return:    str, output for status bar
         """
         output = ""
-        strings = re.findall(r"[a-zA-Z]+", fun)
+        strings = re.findall(r"[a-zA-Z]+[a-zA-Z0-9_]*", fun)
         for string in strings:
-            if not string in self.vars and not string in FUNCTIONS and (string not in self.funs or not include_funs) and (string not in self.constants or not include_constants):
+            if not string in self.vars and not string in FUNCTIONS and (string not in self.funs or not include_funs) and (string not in self.consts or not include_constants):
                 self.add_var(string)
                 output += f"added var: {string},"
         return output
 
     def add_var(self, varname: str):
         self.vars.update({varname: sy.symbols(varname)})
+        return "Savec Variable"
+
+    def add_vec(self, vecname: str, array):
+        self.vecs.update({vecname: array})
+        return "Saved Vector"
 
     def add_table(self, path, sep=","):
         self.vecs.update(sheet_read.get_vectors(sheet_read.read_table(path, sep=sep)))
@@ -210,7 +202,7 @@ class PKTSession:
             else:
                 status = "Error: No session is loaded."
 
-        elif path is "" and filename is "":
+        elif path == "" and filename == "":
             if isinstance(self, PKTSession):
                 if os.access(self.path, os.W_OK) and os.path.isfile(self.path):  # check for write access and if path is a file
                     self.save_session()  # save the session with the internal path
@@ -231,90 +223,3 @@ class PKTSession:
 
     def __repr__(self):
         return f"funs:{self.funs} vars:{self.vars} vecs:{self.vecs} plots:{self.plots}"
-"""    def list_vecs(self, only_name=True):
-        output = "vectors: "
-        if only_name:
-            for vecname in self.vecs.keys():
-                output += vecname + ", "
-        else:
-            output += "\n"
-            for vecname, vec in self.vecs.items():
-                output += f"\t{vecname}={vec}\n"
-        return output
-
-    def list_funs(self, only_name=True):
-        output = "functions: "
-        if only_name:
-            for funname in self.funs.keys():
-                output += funname + ", "
-        else:
-            output += "\n"
-            for funname, func in self.funs.items():
-                output += f"\t{funname}={func}\n"
-        return output
-
-    def list_vars(self, only_name=True):
-        output = "variables: "
-        if only_name:
-            for varname in self.vars.keys():
-                output += varname + ", "
-        else:
-            output += "\n"
-            for varname, var in self.vars.items():
-                output += f"\t{varname}={var}\n"
-        return output
-
-    def list_consts(self, only_name=True):
-        output = "constants: "
-        if only_name:
-            for constname in self.constants.keys():
-                output += constname + ", "
-        else:
-            output += "\n"
-            for constname, const in self.constants.items():
-                output += f"\t{constname}={const}\n"
-        return output"""
-"""    def get_vecs(self, only_name=False):
-        output = []
-        if only_name:
-            for vecname in self.vecs.keys():
-                output.append(vecname)
-        else:
-            for vecname, vec in self.vecs.items():
-                output.append(f"{vecname}={vec}")
-        return output
-
-    def get_funs(self, only_name=False):
-        output = []
-        if only_name:
-            for funname in self.funs.keys():
-                output.append(funname)
-        else:
-            for funname, fun in self.funs.items():
-                output.append(f"{funname}={fun}")
-        return output
-
-    def get_vars(self, only_name=False):
-        output = []
-        if only_name:
-            for varname in self.vars.keys():
-                output.append(varname)
-        else:
-            for varname, var in self.vars.items():
-                output.append(f"{varname}={var}")
-        return output
-
-    def get_consts(self, only_name=False):
-        output = []
-        if only_name:
-            for constname in self.constants.keys():
-                output.append(constname)
-        else:
-            for constname, const in self.constants.items():
-                output.append(f"{constname}={const}")
-        return output"""
-# s = load_session("session.pk")
-# print(s)
-# s = PKTSession()
-# s.vars.update({"x": fun.V("x"), "y": fun.V("y")})
-# s.funs.update({"f": fun.Exp(s)})
