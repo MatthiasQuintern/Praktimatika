@@ -1,6 +1,5 @@
 import npyscreen as nps
-import checks
-from tools import sheet_read as sr
+from tools import sheet_read as sr, checks
 import os
 
 #

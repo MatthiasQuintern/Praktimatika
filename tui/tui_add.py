@@ -1,8 +1,8 @@
 import curses
 import npyscreen as nps
 import sympy as sy
-import checks
-
+from tools import checks
+from tui import tui_widgets as twid
 
 class AddVec(nps.FormBaseNew):
     DEFAULT_LINES = 20
@@ -14,7 +14,7 @@ class AddVec(nps.FormBaseNew):
         self.title = self.add(nps.MultiLine, rely=1, relx=3, editable=False, values=["Enter your vector line by line, values separated with ',' eg:", "\tv = [2, 0.5, .3, 4.]", "\tw=[42]"])
         # todo: change addfunbox
         self.to_add = self.add(AddFunBox, rely=4, relx=3, max_height=7, exit_right=True, scroll_exit=True)
-        self.c_replace = self.add(nps.Checkbox, rely=12, relx=3, editable=True, name="Replace conflicting vectors", value=False)
+        self.c_replace = self.add(twid.CheckBox, rely=12, relx=3, editable=True, name="Replace conflicting vectors", value=False)
         self.b_add = self.add(nps.ButtonPress, rely=14, relx=1, name="Add Vectors", when_pressed_function=self.add_vecs)
         self.b_back = self.add(nps.ButtonPress, rely=15, relx=1, name="Go Back", when_pressed_function=self.parentApp.switchFormPrevious)
         self.status = self.add(nps.FixedText, rely=16, relx=3, editable=False, value="Press 'Enter' to start/stop writing in the textbox.")
@@ -51,7 +51,7 @@ class AddFun(nps.FormBaseNew):
 
     def add_funs(self):
         try:
-            self.status.value = self.parentApp.ses.add_vecs(self.to_add.values, replace=self.c_replace.value)
+            self.status.value = self.parentApp.ses.add_funs(self.to_add.values, replace=self.c_replace.value)
             self.status.update()
         except sy.SympifyError as ex:
             nps.notify_confirm(str(ex))

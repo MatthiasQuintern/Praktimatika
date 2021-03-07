@@ -1,7 +1,7 @@
 import npyscreen as nps
 import numpy as np
-from tools import Mittelwert
-import checks
+from tools import checks
+from maths import median
 
 from tui import tui_widgets as twid
 
@@ -65,7 +65,8 @@ class WeightedMedian(nps.FormBaseNew):
         self.b_back = self.add(nps.ButtonPress, rely=4, relx=1, name="Go Back", when_pressed_function=self.parentApp.switchFormPrevious)
         # result
         self.result_name = self.add(nps.TitleMultiLine, rely=6, relx=3, editable=False, use_two_lines=True, begin_entry_at=0, name="Result:", values=["Weighted Median", "Internal Uncertainty", "External Uncertainty"])
-        self.result = self.add(twid.BVecDisplay, rely=6, relx=25, max_height=5, editable=True, values=["None", "None", "None"])
+        #todo: make newvecddisply work
+        self.result = self.add(twid.NewVecDisplay, rely=6, relx=25, max_height=5, editable=True, values=["None", "None", "None"])
         # status
         self.status = self.add(nps.FixedText, rely=self.max_y - 4, relx=3, editable=False, value="You can use 'Tab' key for autocomplete Vector names.")
         self.status.important = True  # makes it bold and green
@@ -83,7 +84,7 @@ class WeightedMedian(nps.FormBaseNew):
                 ready = False
                 self.status.value = "Vectors do not have the same length."
             else:
-                result = Mittelwert.weighted_median(self.parentApp.ses.vecs[self.vector.value], self.parentApp.ses.vecs[self.unc_vector.value])
+                result = median.weighted_median(self.parentApp.ses.vecs[self.vector.value], self.parentApp.ses.vecs[self.unc_vector.value])
                 self.result.values = [str(val) for val in result]
                 nps.notify_confirm(self.result.values)
                 self.result.update()

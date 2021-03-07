@@ -18,7 +18,7 @@ class MultiLineAction(nps.MultiLineAction):
         name, value = act_on_this.split("=")
         if self.parent.main_select.value == [0]:    # Function
             # self.ppa.function = (name, self.ppa.ses.funs[name])
-            self.ppa.function = (name, value)
+            self.ppa.function = (name, self.ppa.ses.funs[name])
             self.ppa.switchForm("m_fun")
         elif self.parent.main_select.value == [1]:    # Variable
             self.ppa.variable = (name, self.ppa.ses.vals[name])
@@ -82,9 +82,9 @@ class HomeMenu(nps.FormBaseNewWithMenus):
         self.b_add_vec = self.add(nps.ButtonPress, rely=11, relx=3, name="Add Vector", when_pressed_function=self.call_add_vec)
         self.b_weight = self.add(nps.ButtonPress, rely=18, relx=3, name="Weighted Median", when_pressed_function=self.call_weighted_median)
         self.b_latex = self.add(nps.ButtonPress, rely=19, relx=3, name="Latex Table", when_pressed_function=self.call_latex_table)
+        self.b_plot = self.add(nps.ButtonPress, rely=20, relx=3, name="Plots", when_pressed_function=self.call_plot_menu)
 
-
-        self.main_select = self.add(MainSelect, begin_entry_at=0, scroll_exit=True, rely=25, max_height=5, name="Select what do display:", value=[0],
+        self.main_select = self.add(MainSelect, begin_entry_at=0, scroll_exit=True, rely=25, relx=3, max_height=5, max_width=30, name="Select what do display:", value=[0],
                                     values=["Functions", "Variables", "Vectors", "Constants"])
         self.main = self.add(BoxMultiLineAction, editable=True, exit_left=True, scroll_exit=True, relx=35, rely=25, max_height=10, name="Hier steht zeug:",
                              values=["alle", "meine", "entchen"])
@@ -147,3 +147,10 @@ class HomeMenu(nps.FormBaseNewWithMenus):
 
     def call_latex_table(self):
         self.parentApp.switchForm("latex_table")
+
+    def call_plot_menu(self):
+        # create default figure if there is none
+        if len(self.parentApp.ses.figs) == 0:
+            self.parentApp.pl_fig.load_settings("figure0", switch_to_form=False)
+        self.parentApp.switchForm("pl_fig")
+
