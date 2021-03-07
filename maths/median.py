@@ -1,5 +1,4 @@
 import numpy as np
-import sympy as sy
 
 
 def weighted_median(vals, uncerts):
@@ -15,4 +14,8 @@ def weighted_median(vals, uncerts):
     return median, u_inner, u_external
 
 
-print(weighted_median(np.array([200.5, 199.9]), np.array([2.7, 2.6])))
+def median(array):
+    su = 0
+    for val in array:
+        su += val
+    return su / len(array)
