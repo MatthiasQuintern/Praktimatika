@@ -29,7 +29,7 @@ def get_needed_values(f):
     f = str(f)
     variables = re.findall(r"[a-zA-Z]+[a-zA-Z0-9_]*", f)
     for var in variables:
-        if var not in FUNCTIONS:
+        if var not in FUNCTIONS and var not in output:
             output.append(var)
     return output
 
@@ -98,11 +98,4 @@ FUNCTIONS = ['re', 'im', 'sign', 'Abs', 'arg', 'conjugate', 'polar_lift', 'perio
              # 'Exponential,LogarithmicandTrigonometricIntegrals',
              'BesselTypeFunctions', 'AiryFunctions', 'B-Splines', 'RiemannZetaandRelatedFunctions', 'HypergeometricFunctions', 'Ellipticintegrals', 'MathieuFunctions', 'OrthogonalPolynomials', 'SphericalHarmonics', 'TensorFunctions']
 
-f = sy.sympify("exp(4*z)")
-x = np.array([5, 9, 3])
-z = np.array([34, 5, 6])
-print("calc:", calculate(f, {"z": 5}))
-fun = sy.sympify("tan(x+5*z)-10")
-vecs = {"x": np.array([3, 5, 9]), "z": np.array([1, 2, 4])}
-vals = {"x": 10, "z": 4}
-print(calculate(fun, vals))
+

@@ -1,8 +1,13 @@
+"""
+Methods to check if a argument passes certain criteria.
+"""
+
 import re
 import os
 from numpy import array as nparray
-# from https://docs.sympy.org/latest/modules/functions/index.html
-FUNCTIONS = ['re', 'im', 'sign', 'Abs', 'arg', 'conjugate', 'polar_lift', 'periodic_argument', 'principal_branch',
+
+"""# from https://docs.sympy.org/latest/modules/functions/index.html
+ FUNCTIONS = ['re', 'im', 'sign', 'Abs', 'arg', 'conjugate', 'polar_lift', 'periodic_argument', 'principal_branch',
              #'sympy.functions.elementary.trigonometric',
              # 'TrigonometricFunctions',
              'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinc',
@@ -24,6 +29,12 @@ FUNCTIONS = ['re', 'im', 'sign', 'Abs', 'arg', 'conjugate', 'polar_lift', 'perio
              'nC', 'nP', 'nT',
              # 'Special',
              'DiracDelta', 'Heaviside', 'SingularityFunction', 'Gamma,BetaandrelatedFunctions', 'ErrorFunctionsandFresnelIntegrals', 'Exponential,LogarithmicandTrigonometricIntegrals', 'BesselTypeFunctions', 'AiryFunctions', 'B-Splines', 'RiemannZetaandRelatedFunctions', 'HypergeometricFunctions', 'Ellipticintegrals', 'MathieuFunctions', 'OrthogonalPolynomials', 'SphericalHarmonics', 'TensorFunctions']
+"""
+# REGEX PATTERNS
+NAME = r"[a-zA-Z][a-zA-Z0-9]*(_[a-zA-Z0-9]*)*"
+DEF_FUNS = "((re)|(im)|(sign)|(Abs)|(arg)|(conjugate)|(polar_lift)|(periodic_argument)|(principal_branch)|(sin)|(cos)|(tan)|(cot)|(sec)|(csc)|(sinc)|(asin)|(acos)|(atan)|(acot)|(asec)|(acsc)|(atan2)|(HyperbolicFunction)|(sinh)|(cosh)|(tanh)|(coth)|(sech)|(csch)|(asinh)|(acosh)|(atanh)|(acoth)|(asech)|(acsch)|(ceiling)|(floor)|(RoundFunction)|(frac)|(exp)|(LambertW)|(log)|(exp_polar)|(ExprCondPair)|(Piecewise)|(IdentityFunction)|(Min)|(Max)|(root)|(sqrt)|(cbrt)|(real_root)|(Combinatorial)|(bell)|(bernoulli)|(binomial)|(catalan)|(euler)|(factorial)|(subfactorial)|(factorial2)|(doublefactorial)|(FallingFactorial)|(fibonacci)|(tribonacci)|(harmonic)|(lucas)|(genocchi)|(partition)|(MultiFactorial)|(RisingFactorial)|(stirling)|(nC)|(nP)|(nT)|(DiracDelta)|(Heaviside)|(SingularityFunction)|(ErrorFunctionsandFresnelIntegrals)|(BesselTypeFunctions)|(AiryFunctions)|(B-Splines)|(RiemannZetaandRelatedFunctions)|(HypergeometricFunctions)|(Ellipticintegrals)|(MathieuFunctions)|(OrthogonalPolynomials)|(SphericalHarmonics)|(TensorFunctions))"
+VALID = f"({NAME}|({DEF_FUNS}?"+r"\(\)))"
+VALID_F = VALID+r"(([+\-*/]|\*\*)"+VALID+")*"
 
 
 def is_readable_file(path):
@@ -54,12 +65,6 @@ def is_valid_fun(function: str):
     if not res[0]:
         return False, res[1]
     return True, "Valid"
-
-# REGEX PATTERNS
-NAME = r"[a-zA-Z][a-zA-Z0-9]*(_[a-zA-Z0-9]*)?"
-DEF_FUNS = "((re)|(im)|(sign)|(Abs)|(arg)|(conjugate)|(polar_lift)|(periodic_argument)|(principal_branch)|(sin)|(cos)|(tan)|(cot)|(sec)|(csc)|(sinc)|(asin)|(acos)|(atan)|(acot)|(asec)|(acsc)|(atan2)|(HyperbolicFunction)|(sinh)|(cosh)|(tanh)|(coth)|(sech)|(csch)|(asinh)|(acosh)|(atanh)|(acoth)|(asech)|(acsch)|(ceiling)|(floor)|(RoundFunction)|(frac)|(exp)|(LambertW)|(log)|(exp_polar)|(ExprCondPair)|(Piecewise)|(IdentityFunction)|(Min)|(Max)|(root)|(sqrt)|(cbrt)|(real_root)|(Combinatorial)|(bell)|(bernoulli)|(binomial)|(catalan)|(euler)|(factorial)|(subfactorial)|(factorial2)|(doublefactorial)|(FallingFactorial)|(fibonacci)|(tribonacci)|(harmonic)|(lucas)|(genocchi)|(partition)|(MultiFactorial)|(RisingFactorial)|(stirling)|(nC)|(nP)|(nT)|(DiracDelta)|(Heaviside)|(SingularityFunction)|(ErrorFunctionsandFresnelIntegrals)|(BesselTypeFunctions)|(AiryFunctions)|(B-Splines)|(RiemannZetaandRelatedFunctions)|(HypergeometricFunctions)|(Ellipticintegrals)|(MathieuFunctions)|(OrthogonalPolynomials)|(SphericalHarmonics)|(TensorFunctions))"
-VALID = f"({NAME}|({DEF_FUNS}?"+r"\(\)))"
-VALID_F = VALID+r"(([+\-*/]|\*\*)"+VALID+")*"
 
 
 def is_valid_subfun(f: str):
@@ -106,6 +111,20 @@ def is_valid_subfun(f: str):
     return True, "Valid"
 
 
+def is_name_list(l: str):
+    """
+    checks if the string consists of names separated by a whitespace
+    :param l:
+    :return:
+    """
+    try:
+        if re.fullmatch("([a-zA-Z0-9_]+ )*([a-zA-Z0-9_]+)?", l):
+            return True
+    except TypeError:
+        pass
+    return False
+
+
 def is_number_array(arr):
     try:
         nparray(arr, dtype=float)
@@ -125,17 +144,37 @@ def is_number(num: str):
 
 
 def is_float(num: str):
-    if re.fullmatch(r"([0-9]+.[0-9]*)|\.[0-9]+", num):
-        return True
+    try:
+        if re.fullmatch(r"([0-9]+.[0-9]*)|\.[0-9]+", num):
+            return True
+    except TypeError:
+        pass
     return False
+
 
 def is_int(num: str):
-    if re.fullmatch("[0-9]+", num):
-        return True
+    try:
+        if re.fullmatch("[0-9]+", num):
+            return True
+    except TypeError:
+        pass
     return False
 
 
-def str_to_arr(s, dtype=float):
+def is_name(name: str):
+    """
+    eg, sA93Asl_9A9a, but not 9a, a__a
+    Allowed characters: a-zA-Z0-9_
+    """
+    try:
+        if re.fullmatch(NAME, name):
+            return True
+    except TypeError:
+        pass
+    return False
+
+
+def str_to_arr(s: str, dtype=float):
     """
     Turns a string with into a nparry. Values must be separated with ,
     :param s:       string like "[4, 5., .04] or (4.3, 2, 5, 9)
@@ -143,11 +182,25 @@ def str_to_arr(s, dtype=float):
     :return:        bool: success, array/None
     """
     s = s.strip("[]() \n")
-    vars = s.split(",")
+    arr = s.split(",")
     try:
-        return True, nparray(vars, dtype=dtype)
+        return True, nparray(arr, dtype=dtype)
     except ValueError:
         return False, None
 
+
+def str_to_list(s: str, length=None):
+    """
+    Turns a string with into a nparry. Values must be separated with ,
+    :param s:       string like "[4, 5., .04] or (4.3, 2, 5, 9)
+    :param length:  int: length of the array
+    :return:        bool: success, array/None
+    """
+    s = s.strip("[]() \n")
+    l = s.split(",")
+    if length:
+        if not len(l) == length:
+            return False, None
+    return True, l
 
 

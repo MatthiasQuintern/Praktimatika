@@ -152,5 +152,7 @@ class HomeMenu(nps.FormBaseNewWithMenus):
         # create default figure if there is none
         if len(self.parentApp.ses.figs) == 0:
             self.parentApp.pl_fig.load_settings("figure0", switch_to_form=False)
+        else:
+            nps.notify_confirm(f"{self.parentApp.ses.figs.keys()}")
         self.parentApp.switchForm("pl_fig")
 

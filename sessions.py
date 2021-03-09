@@ -1,22 +1,21 @@
 import sympy as sy
-from tools import sheet_read
+from tools import sheet_read, plot, checks
 import pickle as pk
 import re
-import sympy.abc as syv    # import all variables
+import sympy.abc as syv  # import all variables
 import os
 from constants import m_e
-import checks
-import numpy as np
+
 # from https://docs.sympy.org/latest/modules/functions/index.html
 FUNCTIONS = ['re', 'im', 'sign', 'Abs', 'arg', 'conjugate', 'polar_lift', 'periodic_argument', 'principal_branch',
-             #'sympy.functions.elementary.trigonometric',
+             # 'sympy.functions.elementary.trigonometric',
              # 'TrigonometricFunctions',
              'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinc',
              # 'TrigonometricInverses',
              'asin', 'acos', 'atan', 'acot', 'asec', 'acsc', 'atan2',
              # 'sympy.functions.elementary.hyperbolic', 'HyperbolicFunctions',
              'HyperbolicFunction', 'sinh', 'cosh', 'tanh', 'coth', 'sech', 'csch',
-             #'HyperbolicInverses',
+             # 'HyperbolicInverses',
              'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch',
              # 'sympy.functions.elementary.integers',
              'ceiling', 'floor', 'RoundFunction', 'frac',
@@ -25,11 +24,15 @@ FUNCTIONS = ['re', 'im', 'sign', 'Abs', 'arg', 'conjugate', 'polar_lift', 'perio
              # 'sympy.functions.elementary.piecewise',
              'ExprCondPair', 'Piecewise',
              # 'sympy.functions.elementary.miscellaneous',
-             'IdentityFunction', 'Min', 'Max', 'root', 'sqrt', 'cbrt', 'real_root', 'Combinatorial', 'bell', 'bernoulli', 'binomial', 'catalan', 'euler', 'factorial', 'subfactorial', 'factorial2/doublefactorial', 'FallingFactorial', 'fibonacci', 'tribonacci', 'harmonic', 'lucas', 'genocchi', 'partition', 'MultiFactorial', 'RisingFactorial', 'stirling',
+             'IdentityFunction', 'Min', 'Max', 'root', 'sqrt', 'cbrt', 'real_root', 'Combinatorial', 'bell', 'bernoulli', 'binomial', 'catalan', 'euler', 'factorial',
+             'subfactorial', 'factorial2/doublefactorial', 'FallingFactorial', 'fibonacci', 'tribonacci', 'harmonic', 'lucas', 'genocchi', 'partition', 'MultiFactorial',
+             'RisingFactorial', 'stirling',
              # 'Enumeration',
              'nC', 'nP', 'nT',
              # 'Special',
-             'DiracDelta', 'Heaviside', 'SingularityFunction', 'Gamma,BetaandrelatedFunctions', 'ErrorFunctionsandFresnelIntegrals', 'Exponential,LogarithmicandTrigonometricIntegrals', 'BesselTypeFunctions', 'AiryFunctions', 'B-Splines', 'RiemannZetaandRelatedFunctions', 'HypergeometricFunctions', 'Ellipticintegrals', 'MathieuFunctions', 'OrthogonalPolynomials', 'SphericalHarmonics', 'TensorFunctions']
+             'DiracDelta', 'Heaviside', 'SingularityFunction', 'Gamma,BetaandrelatedFunctions', 'ErrorFunctionsandFresnelIntegrals',
+             'Exponential,LogarithmicandTrigonometricIntegrals', 'BesselTypeFunctions', 'AiryFunctions', 'B-Splines', 'RiemannZetaandRelatedFunctions', 'HypergeometricFunctions',
+             'Ellipticintegrals', 'MathieuFunctions', 'OrthogonalPolynomials', 'SphericalHarmonics', 'TensorFunctions']
 
 
 # load and unpickle a PTKSession object
@@ -37,25 +40,30 @@ def load_session(path):
     with open(path, "rb") as file:
         s = pk.load(file)
         # s = PKTSession(path)
-        s.path = path   # if "save_session_as" was used, self.path might be old
+        s.path = path  # if "save_session_as" was used, self.path might be old
     return s
 
 
 class PKTSession:
+    """
+    Session stores all functions, variables, vectors, constants and figures in dictionaries.
+    The methods to access/manipulate the dicts often return a string with error/succes messages, so that an app can show the messages
+
+    """
     def __init__(self, path):
         self.path = path
         self.funs = {}
         self.vars = {"x": syv.x, "y": syv.y, "z": syv.z}
         self.consts = {"m_e": m_e}
         self.vecs = {}
-        self.plots = {}
+        self.figs = {}
         self._dicts = {
-                        "Functions": self.funs,
-                        "Variables": self.vars,
-                        "Constants": self.consts,
-                        "Vectors":   self.vecs,
-                        "Plots":     self.vecs,
-                       }
+            "Functions":    self.funs,
+            "Variables":    self.vars,
+            "Constants":    self.consts,
+            "Vectors":      self.vecs,
+            "Plots":        self.figs,
+        }
 
     #
     # OUTPUTTING STUFF
@@ -115,6 +123,31 @@ class PKTSession:
                 output += f"NOT added: {function.split('=')[0]} (invalid function),"
         return output.strip(",")
 
+    def check_fun_auto_add_var(self, fun, include_funs=True, include_constants=True):
+        """
+        Automatically adds a variable for strings in a function
+        :param include_constants:   Also add variables for constants
+        :param include_funs:        # TODO: Use functions in function declaration, eg. f=cos(x) and g=2*f(x)
+        :param fun:                 str, function without "f="
+        :return:                    str, output for status bar
+        """
+        output = ""
+        strings = re.findall(r"[a-zA-Z]+[a-zA-Z0-9_]*", fun)
+        for string in strings:
+            if not string in self.vars and not string in FUNCTIONS and (string not in self.funs or not include_funs) and (string not in self.consts or not include_constants):
+                self.add_var(string)
+                output += f"added var: {string},"
+        return output
+
+    def add_var(self, varname: str):
+        self.vars.update({varname: sy.symbols(varname)})
+        return f"Saved Variable {varname}"
+
+    def add_vec(self, vecname: str, array):
+        # better use add_vecs for string declarations
+        self.vecs.update({vecname: array})
+        return f"Saved Vector {vecname}"
+
     def add_vecs(self, vecs: iter, replace=True, dtype=float):
         """
         :param dtype:       data type
@@ -137,31 +170,129 @@ class PKTSession:
                 output += f"NOT added: {vector.split('=')[0]} (invalid vector),"
         return output.strip(",")
 
-
-    def check_fun_auto_add_var(self, fun, include_funs=True, include_constants=True):
-        """
-        Automatically adds a variable for strings in a function
-        :param fun: str, function without "f="
-        :return:    str, output for status bar
-        """
-        output = ""
-        strings = re.findall(r"[a-zA-Z]+[a-zA-Z0-9_]*", fun)
-        for string in strings:
-            if not string in self.vars and not string in FUNCTIONS and (string not in self.funs or not include_funs) and (string not in self.consts or not include_constants):
-                self.add_var(string)
-                output += f"added var: {string},"
-        return output
-
-    def add_var(self, varname: str):
-        self.vars.update({varname: sy.symbols(varname)})
-        return "Savec Variable"
-
-    def add_vec(self, vecname: str, array):
-        self.vecs.update({vecname: array})
-        return "Saved Vector"
-
     def add_table(self, path, sep=","):
         self.vecs.update(sheet_read.get_vectors(sheet_read.read_table(path, sep=sep)))
+
+    #
+    # PLOT STUFF
+    #
+    def add_fig(self, figname: str, figsize=None, dpi=300, tight_layout=False, constrained_layout=False, axes=None):
+        """
+        Add the settings for a matplotlib figure, so that it can be created if needed
+        :param axes:
+        :param figname:
+        :param figsize:
+        :param dpi:
+        :param tight_layout:
+        :param constrained_layout:
+        :return:
+        """
+        if axes is None:
+            axes = {}
+        d = {"figsize": figsize, "dpi": float(dpi), "tight_layout": tight_layout, "constrained_layout": constrained_layout, "axes": axes}
+        if figname != "":
+            self.figs.update({figname: d})
+            return f"Added figure '{figname}'"
+        return f"Invalid figure name: '{figname}'"
+
+    def add_axes(self, figname, axname, title=None, xlabel=None, ylabel=None, legend=False, fontsize="13", grid="major", gline="-", gcolor="#777",
+                 xlim=None, ylim=None, xscale="linear", yscale="linear", plots=None):
+        """
+        Add settings and data for a matplotlib axis, so that it can be created if needed
+        :param plots:
+        :param figname:
+        :param axname:
+        :param title:
+        :param xlabel:
+        :param ylabel:
+        :param legend:
+        :param fontsize:
+        :param grid:
+        :param gline:
+        :param gcolor:
+        :param xlim:
+        :param ylim:
+        :param xscale:
+        :param yscale:
+        :return:
+        """
+        if plots is None:
+            plots = {}
+        if figname in self.figs:
+            if "axes" in self.figs[figname]:
+                d = {"title": title, "xlabel": xlabel, "ylabel": ylabel, "legend": legend, "fontsize": fontsize, "grid": grid, "gline": gline, "gcolor": gcolor,
+                     "xlim": xlim, "ylim": ylim, "xscale": xscale, "yscale": yscale, "plots": plots}
+                self.figs[figname]["axes"].update({axname: d})
+                return f"Added axes '{axname}' to figure '{figname}'"
+            return f"figure '{figname}' has no 'axes' entry to add '{axname}'"
+        return f"Invalid figure name: '{figname}'"
+
+    def add_plot(self, figname, axname, plotname, xdata, ydata, marker=None, line="-", color=None, label=None):
+        """
+        Add settings and data for a matplotlib plot, so that it can be created if needed
+        :param figname:
+        :param axname:
+        :param plotname:
+        :param xdata:
+        :param ydata:
+        :param marker:
+        :param line:
+        :param color:
+        :param label:
+        :return:
+        """
+        if figname in self.figs and "axes" in self.figs[figname]:
+            if axname in self.figs[figname]["axes"]:
+                self.figs[figname]["axes"][axname]["plots"].update({plotname: {"xdata": xdata, "ydata": ydata, "marker": marker, "line": line, "color": color, "label": label}})
+                return f"Added plot '{plotname}' to axes '{axname}' of figure '{figname}'"
+            return f"Invalid axis name: '{axname}'"
+        return f"Invalid figure name: '{figname}'"
+
+    def create_fig(self, figname):
+        """
+        Create a matplotlib figure from the settings in self.figs
+        :param figname:     str: dictionary key
+        :return:            matplotlib figure object or Error
+        """
+        fig = None
+        ax = None
+        try:
+            figsize = None
+            if checks.str_to_list(self.figs[figname]["figsize"])[0]:
+                figsize = checks.str_to_list(self.figs[figname]["figsize"])[1]
+            for axes in self.figs[figname]["axes"]:
+                ax_d = self.figs[figname]["axes"][axes]
+                for pl in ax_d["plots"]:
+                    # get the arrays/data
+                    if ax_d["plots"][pl]["xdata"] in self.vecs:
+                        xdata = self.vecs[ax_d["plots"][pl]["xdata"]]
+                    # check if its an array
+                    elif checks.str_to_arr(ax_d["plots"][pl]["xdata"], float)[0]:
+                        xdata = checks.str_to_arr(ax_d["plots"][pl]["xdata"], float)[1]
+                    else:
+                        raise TypeError("xdata is not in session vectors or array")
+                    # get the arrays/data
+                    if ax_d["plots"][pl]["ydata"] in self.vecs:
+                        ydata = self.vecs[ax_d["plots"][pl]["xdata"]]
+                    # check if its an array
+                    elif checks.str_to_arr(ax_d["plots"][pl]["ydata"], float)[0]:
+                        ydata = checks.str_to_arr(ax_d["plots"][pl]["ydata"], float)[1]
+                    else:
+                        raise TypeError("xdata is not in session vectors or array")
+
+
+                    fig, ax = plot.plot(xdata, ydata, marker=ax_d["plots"][pl]["marker"],
+                                        line=ax_d["plots"][pl]["line"], color=ax_d["plots"][pl]["color"], label=ax_d["plots"][pl]["label"],       # line options
+                                        fig=fig, ax=ax, dpi=self.figs[figname]["dpi"], figsize=figsize,                                        # figure/axes options todo:tight/constrained_layout
+                                        title=ax_d["title"], xlabel=ax_d["xlabel"], ylabel=ax_d["ylabel"], legend=ax_d["legend"], fontsize=ax_d["fontsize"],  # labels....
+                                        grid=ax_d["grid"], gline=ax_d["gline"], gcolor=ax_d["gcolor"],
+                                        xlim=ax_d["xlim"], ylim=ax_d["ylim"], xscale=ax_d["xscale"], yscale=ax_d["yscale"],                                  # axes options
+                                        show=False)
+        except TypeError as ex:
+            return ex
+        except KeyError as ex:
+            return ex
+        return fig
 
     #
     # SAVING SESSIONS with python pickle
@@ -214,12 +345,21 @@ class PKTSession:
         return status
 
     def save_session_as(self, path):
+        """
+        for SAVE Session Saving use check_save_session
+        :param path:
+        :return:
+        """
         with open(path, "wb") as file:
             pk.dump(self, file)
 
     def save_session(self):
+        """
+        for SAVE Session Saving use check_save_session
+        :return:
+        """
         with open(self.path, "wb") as file:
             pk.dump(self, file)
 
     def __repr__(self):
-        return f"funs:{self.funs} vars:{self.vars} vecs:{self.vecs} plots:{self.plots}"
+        return f"funs:{self.funs} vars:{self.vars} vecs:{self.vecs} plots:{self.figs}"

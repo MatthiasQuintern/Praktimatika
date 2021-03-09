@@ -1,13 +1,10 @@
 import os
 import sys
 import npyscreen as nps
-import sympy as sy
-import checks
 import sessions
-import curses
 import re
 import pandas.io.clipboard as clip  # copy to clipboard
-from tui import tui_user_functions, tui_add
+from tui import tui_user_functions, tui_add, tui_plot
 from tui import tui_functions
 from tui import tui_import
 from tui import tui_home
@@ -103,11 +100,14 @@ class Praktimatika(nps.NPSAppManaged):
     def onStart(self):
         self.print_out = True   # print outputs to file
         self.copy_clip = True   # copy outputs to clipboard
+        self.dec_sep = ","      # for latex printing
         # stores a selected ... to be accessible for all forms: (name, value)
         self.function = ("", None)  # the selected function
         self.variable = ("", None)
         self.vector = ("", None)
         self.constant = ("", None)
+        #
+        nps.setTheme(nps.Themes.TransparentThemeLightText)
         # temp:
         # self.ses = sessions.load_session("session.ptk")
         self.ses = sessions.PKTSession(os.getcwd() + "/new_session.ptk")
@@ -119,16 +119,22 @@ class Praktimatika(nps.NPSAppManaged):
         self.save = self.addForm("save", SaveMenu, name="Save Praktimatika PKTSession")
         self.impor = self.addForm("import", tui_import.ImportMenu, name="Import vectors from a spreadsheet")
         self.func = self.addForm("m_fun", tui_user_functions.UserFuncMenu, name="Function Menu")
-        self.func_calc = self.addForm("m_fun_calc", tui_user_functions.UserFuncCalc, name="Calculation Menu")
+        self.func_calc = self.addForm("m_fun_calc", tui_user_functions.UserFuncCalc2, name="Calculation Menu")
+
         # BUILTIN FUNCTION MENUS
         self.weighted_median = self.addForm("weighted_median", tui_functions.WeightedMedian, name="Weighted Median")
+        self.error_prop = self.addForm("error_prop", tui_user_functions.ErrorPropagation, name="Error Propagation")
+        # PLOT MENUS
+        self.plot = self.addForm("plot", tui_plot.AxesMenu, name="Plot Menu")   # remove!
+        self.pl_fig = self.addForm("pl_fig", tui_plot.FigMenu, name="Plot Menu - Figure")
+        self.pl_ax = self.addForm("pl_ax", tui_plot.AxesMenu, name="Plot Menu - Axis")
+        self.pl_pl = self.addForm("pl_pl", tui_plot.PlotMenu, name="Plot Menu - Data")
         # Add Menus
         self.add_fun = self.addForm("add_fun", tui_add.AddFun, name="Add Functions")
         self.add_vec = self.addForm("add_vec", tui_add.AddVec, name="Add Vectors & Values")
         self.save_vec = self.addForm("save_vec", tui_functions.SaveVec, name="Save Vector")
         # TOOLS
         self.latex = self.addForm("latex_table", tui_tools.LatexTable, name="Create Latex Table")
-
 
     def output(self, message):
         message = str(message)
@@ -139,6 +145,16 @@ class Praktimatika(nps.NPSAppManaged):
             clip.clipboard_set(message)
         nps.notify_confirm(message)
 
+    def show_error(self, message, exception: BaseException):
+        """
+        Shows an Error Message in an nps.notify_confirm Form
+        :param message:     string, message
+        :param exception:   Exception
+        :return:
+        """
+        nps.notify_confirm(f"{message}:\n{exception}\nin file {exception.__traceback__.tb_frame.f_code.co_filename}\n"
+                           f"in line {exception.__traceback__.tb_lineno}")
+
     @staticmethod
     def exit_app():
         if nps.notify_yes_no("Are you sure you want to exit Praktimatika?", title='Exit Praktimatika'):
@@ -147,6 +163,8 @@ class Praktimatika(nps.NPSAppManaged):
     def change_setting(self, value):
         # TODO
         pass
+
+
 if __name__ == '__main__':
     TestApp = Praktimatika().run()
 

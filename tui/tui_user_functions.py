@@ -6,6 +6,8 @@ import sympy as sy
 from tools import checks
 from tui import tui_widgets as twid
 from maths import error
+
+
 #
 # FUNCTION MENU
 #
@@ -90,26 +92,30 @@ class UserFuncCalc2(nps.FormBaseNew):
                 value = self.parentApp.ses.consts[varlist[i]]
             elif varlist[i] in self.parentApp.ses.vecs.keys():
                 value = self.parentApp.ses.vecs[varlist[i]]
-            self.vars.update({varlist[i]: self.add(twid.TVecSelect, rely=3 + i, relx=3, name=f"{varlist[i]}:", value=value)})
+            # value must be string, otherwise there can be unfixable TypeError with 1-element numpy arrays
+            self.vars.update({varlist[i]: self.add(twid.TVecSelect, rely=3 + i, relx=3, name=f"{varlist[i]}:", value=str(value))})
 
         self.fun.value = f"{self.parentApp.function[0]}={self.parentApp.function[1]}"
         self.fun.update()
         # set cursor to first var
-        self.editw = 7
+        self.editw = self._count_editable() - 1
 
     def calc(self):
         d = {}  # dict with varname: vector pairs
         for name, wid in self.vars.items():
-            # IF THE CHECKS DON'T PASS, THE INPUT VALUE IS STILL INVALID!
+            # IF THE CHECKS DON'T PASS, THE INPUT VALUE IS STILL INVALID/NONE!
             value = wid.value
             if str(value) in self.parentApp.ses.vecs:
                 value = self.parentApp.ses.vecs[str(value)]
             # check if value is an array with numbers
-            if checks.is_number(value):
+            elif checks.is_number(value):
                 value = float(value)
             # check if value is a number
-            elif checks.is_number_array(value):
-                value = np.array(value, dtype=float)
+            # elif checks.is_number_array(value):
+            #     value = np.array(value, dtype=float)
+            else:
+                value = checks.str_to_arr(str(value))[1]
+                # nps.notify_confirm(f"Can not convert {value} to a number or array")
             d.update({name: value})
         try:
             self.result_val = cl.calculate(self.parentApp.function[1], d)

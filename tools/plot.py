@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import functions as fun
 import numpy as np
-
+import re
 
 def rangeplot(f: fun.MathFunction, xmin=0, xmax=1, steps=1000, fig=None, dpi=300, ax=None, title=None, xlabel=None, ylabel=None, xscale="linear", yscale="linear", fontsize="14"):
     """
@@ -48,12 +48,13 @@ def rangeplot(f: fun.MathFunction, xmin=0, xmax=1, steps=1000, fig=None, dpi=300
 
 
 def plot(xdata, ydata, marker=None, line="-", color=None, label=None,       # line options
-         fig=None, ax=None, dpi=300,                                        # figure/axes options
+         fig=None, ax=None, dpi=300, figsize=None,                                     # figure/axes options
          title=None, xlabel=None, ylabel=None, legend=False, fontsize="13", # labels....
          grid="major", gline="-", gcolor="#777",
          xlim=None, ylim=None, xscale="linear", yscale="linear",                                  # axes options
          show=True):
     """
+    :param figsize:
     :param grid:    "major", "minor", "both"
     :param gcolor   wie color
     :param gline    wie line
@@ -138,55 +139,58 @@ def plot(xdata, ydata, marker=None, line="-", color=None, label=None,       # li
         ``'k'``          black
         ``'w'``          white
         =============    ===============================
-
         and the ``'CN'`` colors that index into the default property cycle.
 
-    # todo:
-        If the color is the only part of the format string, you can
-        additionally use any  `matplotlib.colors` spec, e.g. full names
-        (``'green'``) or hex strings (``'#008000'``).
     """
     plt.rcParams.update({
         "font.size": fontsize,
         # "text.usetex": True,
         "font.family": "sans-serif",
         "font.sans-serif": ["Helvetica", "Avant Garde", "Computer Modern Sans serif"]})
-    # Create format string: fmt = '[marker][line][color]'
-    fmt = ""
-    if marker:
-        fmt += marker
-    if line:
-        fmt += line
-    if color:
-        fmt += color
+
+    # Check if marker, line and color are valid, set None otherwise
+    if not (isinstance(marker, str) and marker in ".,ov^<>1234sp*hH+Dd|_:"):
+        marker = None
+    if not (isinstance(line, str) and line in "--.:"):
+        line = None
+    if not (isinstance(color, str) and re.fullmatch(r"([bgrcykw])|(#[\da-fA-F]{3})|(#[\da-fA-F]{6})", color)):
+        color = None
+
+    fsize = None
+    # check if valid figsize is given
+    if hasattr(figsize, "len"):
+        print("yayyayayayay")
+        if not isinstance(figsize, str) and len(figsize) == 2:
+            fsize = figsize
 
 
     # figure:
     # figsize=None, dpi=None, facecolor=None, edgecolor=None, linewidth=0.0, frameon=None, subplotpars=None, tight_layout=None, constrained_layout=None
     # create a new figure is none is given:
     if not fig:
-        fig = plt.figure(figsize=(8, 4), dpi=dpi, linewidth=1.0, frameon=None, subplotpars=None, tight_layout=True, constrained_layout=None)
+        fig = plt.figure(figsize=fsize, dpi=dpi, linewidth=1.0, frameon=True, subplotpars=None, tight_layout=True, constrained_layout=None)
     if not ax:
         ax = fig.add_subplot(xlabel=xlabel, ylabel=ylabel, xscale=xscale, yscale=yscale)
+    ax.plot(xdata, ydata, color=color, marker=marker, linestyle=line, label=label)
 
-    ax.plot(xdata, ydata, fmt, label=label)
-
-    ax.minorticks_on()
-
-    if label or legend:
+    if label and legend:
         ax.legend()
 
     if title:
         ax.set_title(title, fontsize=fontsize)
 
     if grid == "major" or grid == "minor" or grid == "both":
+        if grid == "minor" or "both":
+            ax.minorticks_on()
         ax.grid(b=True, which=grid, linestyle=gline, color=gcolor)
 
     if xlim:
-        ax.set_xlim(*xlim)
+        if xlim[0] != xlim[1]:
+            ax.set_xlim(*xlim)
 
     if ylim:
-        ax.set_ylim(*ylim)
+        if ylim[0] != ylim[1]:
+            ax.set_ylim(*ylim)
 
     # plt.imsave("meinbild.png")
     if show:
