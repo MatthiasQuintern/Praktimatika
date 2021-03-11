@@ -86,7 +86,7 @@ class HomeMenu(nps.FormBaseNewWithMenus):
 
         self.main_select = self.add(MainSelect, begin_entry_at=0, scroll_exit=True, rely=25, relx=3, max_height=5, max_width=30, name="Select what do display:", value=[0],
                                     values=["Functions", "Variables", "Vectors", "Constants"])
-        self.main = self.add(BoxMultiLineAction, editable=True, exit_left=True, scroll_exit=True, relx=35, rely=25, max_height=10, name="Hier steht zeug:",
+        self.main = self.add(BoxMultiLineAction, editable=True, exit_left=True, scroll_exit=True, relx=35, rely=25, max_height=15, name="Hier steht zeug:",
                              values=["alle", "meine", "entchen"])
 
         self.status = self.add(nps.Textfield, rely=MAXY - 2 - self.BLANK_LINES_BASE, relx=1, editable=False)
