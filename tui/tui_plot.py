@@ -123,8 +123,6 @@ class FigMenu(PltMenu):
         else:
             nps.notify_confirm(f"Error showing figure: '{self.i_name.value}' not in session figures")
 
-
-
     def load_settings(self, figname: str, switch_to_form=True, cursor_line=0):
         """loads settings from session figs dict if possible. if not creates new with defaults"""
         # update, because it will be empty at loading

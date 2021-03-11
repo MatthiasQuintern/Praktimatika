@@ -4,20 +4,26 @@ import sympy as sy
 from tools import checks
 from tui import tui_widgets as twid
 
+
 class AddVec(nps.FormBaseNew):
-    DEFAULT_LINES = 20
+    DEFAULT_LINES = 30
     DEFAULT_COLUMNS = 110
     SHOW_ATX = 8
     SHOW_ATY = 2
 
     def create(self):
-        self.title = self.add(nps.MultiLine, rely=1, relx=3, editable=False, values=["Enter your vector line by line, values separated with ',' eg:", "\tv = [2, 0.5, .3, 4.]", "\tw=[42]"])
-        # todo: change addfunbox
-        self.to_add = self.add(AddFunBox, rely=4, relx=3, max_height=7, exit_right=True, scroll_exit=True)
-        self.c_replace = self.add(twid.CheckBox, rely=12, relx=3, editable=True, name="Replace conflicting vectors", value=False)
-        self.b_add = self.add(nps.ButtonPress, rely=14, relx=1, name="Add Vectors", when_pressed_function=self.add_vecs)
-        self.b_back = self.add(nps.ButtonPress, rely=15, relx=1, name="Go Back", when_pressed_function=self.parentApp.switchFormPrevious)
-        self.status = self.add(nps.FixedText, rely=16, relx=3, editable=False, value="Press 'Enter' to start/stop writing in the textbox.")
+        y0 = 7
+        y1 = y0 + 7
+        self.desc = self.add(nps.MultiLine, rely=1, relx=3, editable=False, values=["Enter your array or number line by line, array values separated with ','",
+                                                                                    "Vector can reference other vector, Numpy Array slicing is supported",
+                                                                                    "Operations are performed from back to front, '()' are not allowed (yet?)",
+                                                                                    "    v = [2, 0.5, .3, 4., 7, 5, -5.3]",
+                                                                                    "    w = 2 * v[2::3] / 5"])
+        self.to_add = self.add(AddFunBox, rely=y0, relx=3, max_height=7, exit_right=True, scroll_exit=True)
+        self.c_replace = self.add(twid.CheckBox, rely=y1+1, relx=3, editable=True, name="Replace conflicting vectors", value=False)
+        self.b_add = self.add(nps.ButtonPress, rely=y1+2, relx=1, name="Add Vectors", when_pressed_function=self.add_vecs)
+        self.b_back = self.add(nps.ButtonPress, rely=y1+3, relx=1, name="Go Back", when_pressed_function=self.parentApp.switchFormPrevious)
+        self.status = self.add(nps.FixedText, rely=self.max_y - 4, relx=3, editable=False, value="Press 'Enter' to start/stop writing in the textbox.")
         self.status.important = True  # makes it bold and green
 
     def add_vecs(self):

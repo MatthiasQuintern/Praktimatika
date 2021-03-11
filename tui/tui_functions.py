@@ -74,15 +74,17 @@ class WeightedMedian(nps.FormBaseNew):
 
     def calc(self):
         ready = True
-        if not self.vector.value in self.parentApp.ses.vecs:
-            ready = False
+        vec = self.vector.get_vec()
+        if vec is None:
             self.status.value = "Invalid value vector."
-        if not self.unc_vector.value in self.parentApp.ses.vecs:
             ready = False
+        uvec = self.vector.get_vec()
+        if uvec is None:
             self.status.value = "Invalid uncertainty vector."
+            ready = False
+
         if ready:
-            if not len(self.parentApp.ses.vecs[self.vector.value]) == len(self.parentApp.ses.vecs[self.unc_vector.value]):
-                ready = False
+            if not np.shape(vec) == np.shape(uvec):
                 self.status.value = "Vectors do not have the same length."
             else:
                 result = median.weighted_median(self.parentApp.ses.vecs[self.vector.value], self.parentApp.ses.vecs[self.unc_vector.value])
@@ -92,7 +94,7 @@ class WeightedMedian(nps.FormBaseNew):
                 self.mw.update()
                 self.u_int.update()
                 self.u_ext.update()
-                self.status.update()
+        self.status.update()
 
 
 

@@ -1,9 +1,7 @@
 import npyscreen as nps
-import curses
 import numpy as np
-import calc as cl
 import sympy as sy
-from tools import checks
+from tools import checks, tool, calc as cl, calc
 from tui import tui_widgets as twid
 from maths import error
 
@@ -29,16 +27,13 @@ class UserFuncMenu(nps.FormBaseNew):
         self.fun.value = f"{self.parentApp.function[0]}={self.parentApp.function[1]}"
         self.fun.update()
 
-    def dummy(self):
-        nps.notify_confirm(f"{self.fun.value}: ")
-
 
 class UserFuncCalc2(nps.FormBaseNew):
     """
     lets the user input the values/vectors to calculate a function
     the function is used is the parentApp.function, which is selected
     """
-    DEFAULT_LINES = 25
+    DEFAULT_LINES = 40
     DEFAULT_COLUMNS = 120
     SHOW_ATX = 8
     SHOW_ATY = 2
@@ -49,40 +44,19 @@ class UserFuncCalc2(nps.FormBaseNew):
         self.title = self.add(nps.FixedText, editable=False, rely=1, relx=3, value="Select the values to calculate the function")
         self.fun = self.add(nps.FixedText, editable=False, rely=2, relx=3, value="Function")
         self.vars = {}
-        self.b_calc = self.add(nps.ButtonPress, rely=14, relx=1, name="Calculate", when_pressed_function=self.calc)
-        self.result = self.add(nps.FixedText, rely=15, relx=3, value="Result:")
+        y1 = self.create_val_input(3, 3)
+
+        self.b_calc = self.add(nps.ButtonPress, rely=y1 + 1, relx=1, name="Calculate", when_pressed_function=self.calc)
+        self.result = self.add(nps.FixedText, rely=y1 + 2, relx=3, value="Result:")
         self.result_val = None     # store the value of the result, so that it can be processed
-        self.res_name = self.add(nps.TitleText, rely=16, relx=3, use_two_lines=False, name="Result name:", value="res")
-        self.b_store_res = self.add(nps.ButtonPress, rely=18, relx=1, name="Store Result as Vector", when_pressed_function=self.save_res)
-        self.b_back = self.add(nps.ButtonPress, rely=19, relx=1, name="Go Back", when_pressed_function=self.parentApp.switchFormPrevious)
+        self.res_name = self.add(nps.TitleText, rely=y1 + 3, relx=3, use_two_lines=False, name="Result name:", value="res")
+        self.b_store_res = self.add(nps.ButtonPress, rely=y1 + 4, relx=1, name="Store Result as Vector", when_pressed_function=self.save_res)
+        self.b_back = self.add(nps.ButtonPress, rely=y1 + 5, relx=1, name="Go Back", when_pressed_function=self.parentApp.switchFormPrevious)
         # status bar
-        # self.status = self.add(nps.FixedText, rely=self.max_y - 4, relx=3, editable=False, value="You can use 'Tab' key for autocompletion.")
-        # self.status.important = True  # makes it bold and green
+        self.status = self.add(nps.FixedText, rely=self.max_y - 4, relx=3, editable=False, value="Use 'Tab' key for autocompletion. Array slicing is supported.")
+        self.status.important = True  # makes it bold and green
 
-    def _clear_all_widgets(self, ):
-        self._widgets__ = []
-        self._widgets_by_id = {}
-        self._next_w_id = 0
-        self.nextrely = self.DEFAULT_NEXTRELY
-        self.nextrelx = self.DEFAULT_X_OFFSET
-        self.editw = 0  # Index of widget to edit.
-
-    def _count_editable(self):
-        n = 0
-        for w in self._widgets__:
-            if w.editable and not w.hidden:
-                n += 1
-        return n
-
-    def pre_edit_loop(self):
-        """
-        updates the vectornames and vectors widgets
-        detects, which values are needed to calculate the function
-        """
-        # Remove all widgets and recreate them without variable widgets
-        self._clear_all_widgets()
-        self.create()
-
+    def create_val_input(self, y, col):
         varlist = cl.get_needed_values(self.parentApp.function[1])
 
         for i in range(len(varlist)):
@@ -93,17 +67,35 @@ class UserFuncCalc2(nps.FormBaseNew):
             elif varlist[i] in self.parentApp.ses.vecs.keys():
                 value = self.parentApp.ses.vecs[varlist[i]]
             # value must be string, otherwise there can be unfixable TypeError with 1-element numpy arrays
-            self.vars.update({varlist[i]: self.add(twid.TVecSelect, rely=3 + i, relx=3, name=f"{varlist[i]}:", value=str(value))})
+            self.vars.update({varlist[i]: self.add(twid.TVecSelect, rely=y + i, relx=col, name=f"{varlist[i]}:", value=str(value))})
+        return len(self.vars)
+
+    def _clear_all_widgets(self, ):
+        self._widgets__ = []
+        self._widgets_by_id = {}
+        self._next_w_id = 0
+        self.nextrely = self.DEFAULT_NEXTRELY
+        self.nextrelx = self.DEFAULT_X_OFFSET
+        self.editw = 0  # Index of widget to edit.
+
+    def pre_edit_loop(self):
+        """
+        updates the vectornames and vectors widgets
+        detects, which values are needed to calculate the function
+        """
+        # Remove all widgets and recreate them without variable widgets
+        self._clear_all_widgets()
+        self.create()
 
         self.fun.value = f"{self.parentApp.function[0]}={self.parentApp.function[1]}"
         self.fun.update()
         # set cursor to first var
-        self.editw = self._count_editable() - 1
+        self.editw = 0
 
     def calc(self):
         d = {}  # dict with varname: vector pairs
         for name, wid in self.vars.items():
-            # IF THE CHECKS DON'T PASS, THE INPUT VALUE IS STILL INVALID/NONE!
+            """ # IF THE CHECKS DON'T PASS, THE INPUT VALUE IS STILL INVALID/NONE!
             value = wid.value
             if str(value) in self.parentApp.ses.vecs:
                 value = self.parentApp.ses.vecs[str(value)]
@@ -114,9 +106,13 @@ class UserFuncCalc2(nps.FormBaseNew):
             # elif checks.is_number_array(value):
             #     value = np.array(value, dtype=float)
             else:
-                value = checks.str_to_arr(str(value))[1]
-                # nps.notify_confirm(f"Can not convert {value} to a number or array")
-            d.update({name: value})
+                value = tool.str_to_arr(str(value))[1]
+                # nps.notify_confirm(f"Can not convert {value} to a number or array")"""
+            valid, value = wid.get_vec()
+            if valid:
+                d.update({name: value})
+            else:
+                self.status.value = f"Invalid input for variable '{name}'"
         try:
             self.result_val = cl.calculate(self.parentApp.function[1], d)
             self.result.value = f"Result: {self.result_val}"
@@ -133,7 +129,7 @@ class UserFuncCalc2(nps.FormBaseNew):
 
 class ErrorPropagation(nps.FormBaseNew):
     """
-    Returns
+    Calculates the Error Propagation Function of a function
     """
     DEFAULT_LINES = 25
     DEFAULT_COLUMNS = 120
@@ -192,3 +188,107 @@ class ErrorPropagation(nps.FormBaseNew):
             self.parentApp.switchForm("m_fun_calc")
         else:
             nps.notify_confirm("Could not process function! Either the function is invalid or name is empty")
+
+
+class CurveFit(nps.FormBaseNew):
+    """
+    lets the user curve-fit data with the function
+    user must select xdata, ydata and "x" variable (the one that is NOT a parameter)
+    """
+    # DEFAULT_LINES = 25
+    # DEFAULT_COLUMNS = 120
+    # SHOW_ATX = 8
+    # SHOW_ATY = 2
+
+    def create(self):
+        y0 = 1
+        y1 = y0 + 5
+        col1 = 3
+        col2 = 35
+        self.cycle_widgets = True
+
+        self.title = self.add(nps.FixedText, editable=False, rely=1, relx=3, value="Create a Fit for the selected data")
+        self.fun = self.add(nps.FixedText, editable=False, rely=2, relx=3, value="Function")
+        # DATA
+        self.xdata = self.add(twid.TVecSelect, rely=y1+1, relx=col1, name="x-data:")
+        self.ydata = self.add(twid.TVecSelect, rely=y1 + 2, relx=col1, name="y-data:")
+        self.desc1 = self.add(nps.FixedText, editable=False, rely=y1 + 3, relx=3, value="Select the variable which is NOT a parameter and change the settings if needed." + "\u2501" * 100)
+
+        # PARAMETER SETTINGS
+        n_vals = self.create_param_select(y1+4, col2)
+        y2 = y1 + 5 + n_vals + 1
+        self.line1 = self.add(nps.FixedText, rely=y2, relx=col1, editable=False, value="\u2501" * 200)
+        self.b_calc = self.add(nps.ButtonPress, rely=y2 + 1, relx=1, name="Calculate", when_pressed_function=self.fit)
+
+        # RESULTS
+        self.result = self.add(nps.FixedText, rely=y2 + 2, relx=3, value="Result:")
+        self.res_fun_name = self.add(nps.TitleText, rely=y2 + 3, relx=3, use_two_lines=False, name="Result name:", value="fit")
+        self.b_store_res = self.add(nps.ButtonPress, rely=y2 + 4, relx=1, name="Store as new Function", when_pressed_function=self.save_res)
+
+        self.b_back = self.add(nps.ButtonPress, rely=y2 + 5, relx=1, name="Go Back", when_pressed_function=self.parentApp.switchFormPrevious)
+
+        self.desc2 = self.add(nps.FixedText, editable=False, rely=y2 + 6, relx=3,
+                              value="Parameters Result: (press 's' on a parameter to save it)" + "\u2501" * 100)
+        self.res_vecs = self.add(twid.VecDisplay, rely=y2 + 7, max_height=n_vals + 1, values=["" for i in range(n_vals)])
+
+        # status bar
+        self.status = self.add(nps.FixedText, rely=self.max_y - 4, relx=3, editable=False, value="You can use 'Tab' key for autocompletion.")
+        self.status.important = True  # makes it bold and green
+
+    def _clear_all_widgets(self, ):
+        self._widgets__ = []
+        self._widgets_by_id = {}
+        self._next_w_id = 0
+        self.nextrely = self.DEFAULT_NEXTRELY
+        self.nextrelx = self.DEFAULT_X_OFFSET
+        self.editw = 0  # Index of widget to edit.
+
+    def create_param_select(self, y, col2):
+        varlist = ["None"]
+        if self.parentApp.function is not None:
+            varlist = cl.get_needed_values(self.parentApp.function[1])
+        self.varselect = self.add(nps.TitleSelectOne, rely=y, relx=3, use_two_lines=True, begin_entry_at=0, scroll_exit=True, field_width=17, max_height=len(varlist)+2,
+                                  name="Variable:", value=[0], values=varlist)
+        self.varoptions_desc = self.add(nps.FixedText, editable=False, rely=y, relx=col2, value="lower bound, upper bound, starting value")
+        self.varoptions = {}
+        for i in range(len(varlist)):
+            self.varoptions.update({varlist[i]: self.add(twid.Input, rely=y+1+i, relx=col2, name=varlist[i], begin_entry_at=8, value="-inf, inf, 0", max_height=len(varlist)+1)})
+        return len(varlist)
+
+
+    def pre_edit_loop(self):
+        """
+        updates the vectornames and vectors widgets
+        detects, which values are needed to calculate the function
+        """
+        # Remove all widgets and recreate them without variable widgets
+        self._clear_all_widgets()
+        self.create()
+
+        self.fun.value = f"{self.parentApp.function[0]}={self.parentApp.function[1]}"
+        self.fun.update()
+        # set cursor to first var
+        self.editw = 0
+
+    def fit(self):
+        xvalid, xdata = self.xdata.get_vec()
+        yvalid, ydata = self.xdata.get_vec()
+        if xvalid and yvalid:
+            # put the NOT parameter at the beginning, params have to be after variable for scipy optimize
+            variables = self.varselect.values.insert(0, self.varselect.values.pop(self.varselect.value[0]))
+            f = calc.get_py_fun(self.parentApp.function[1], variables)
+            p0, pmin, pmax = tool.get_p0_bounds(variables, self.varoptions.values)
+            params, pcov = calc.fit(f, xdata, ydata, p0=p0, bounds=(pmin, pmax))
+
+        try:
+            self.result_val = cl.calculate(self.parentApp.function[1], )
+            self.result.value = f"Result: {self.result_val}"
+        except TypeError as ex:
+            self.parentApp.output(ex)
+        self.result.update()
+
+    def save_res(self):
+        if (checks.is_number(self.result_val) or checks.is_number_array(self.result_val)) and self.res_name.value != "":
+            self.parentApp.ses.add_vec(self.res_name.value, np.array(self.result_val))
+        else:
+            nps.notify_confirm("Could not save vector!")
