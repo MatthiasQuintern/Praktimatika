@@ -1,6 +1,6 @@
 import npyscreen as nps
 import curses
-from tools import checks
+from tools import checks, tool
 from npyscreen import wgwidget as widget
 from curses import ascii
 import sympy as sy
@@ -59,7 +59,7 @@ class TitleAction(nps.MultiLineAction):
 # VECTOR WIDGETS
 #
 class VecSelect(nps.Autocomplete):
-    """Widget to select vectors"""
+    """Widget to select vectors. It supports: Arrays like [.4, 2], Names from sessions.vecs, np.ndarray Slicing"""
     def __init__(self, *args, **keywords):
         super(VecSelect, self).__init__(*args, **keywords)
         self.editable = True
@@ -89,6 +89,12 @@ class VecSelect(nps.Autocomplete):
         # set cursor to the end of the word
         self.cursor_position = len(self.value)
 
+    def get_vec(self):
+        """Returns the vector from the Input via the tools.tool. str_to_processed_array method"""
+        valid, vector = tool.str_to_processed_arr(self.value, self.parent.parentApp.ses.vecs)
+        if valid:
+            return vector
+        return None
 
 class TVecSelect(nps.TitleText):
     _entry_type = VecSelect
@@ -155,8 +161,6 @@ class SingleVecDisplay(nps.TitleFixedText):
             # calls the SaveVector Menu for the selected Vector
             self.ppa.save_vec.vector = self.vector
             self.ppa.switchForm("save_vec")
-
-
 
 
 #
@@ -282,11 +286,12 @@ class UserFuncAction(nps.MultiLineAction):
         super(UserFuncAction, self).__init__(*args, **keywords)
         self.ppa = self.parent.parentApp
         self.actions = {
-            "Calculate":            (self.ppa.switchForm, "m_fun_calc"),
+            "Make Calculation":     (self.ppa.switchForm, "m_fun_calc"),
+            "Error Propagation":    (self.ppa.switchForm, "error_prop"),
+            "Curve Fit":            (self.ppa.switchForm, "curve_fit"),
             "Output Latex":         (self.ppa.output, sy.latex(self.ppa.function[1])),
             "Output Function":      (self.ppa.output, str(self.ppa.function[1])),
-            "Error Propagation":    (self.ppa.switchForm, "error_prop"),
-            "Delete":               (self.delete_fun, None),
+            "Delete":               (self.delete_vec, None),
             "Go Back":              (self.ppa.switchForm, "home")
         }
         self.values = list(self.actions.keys())
@@ -310,9 +315,9 @@ class UserFuncAction(nps.MultiLineAction):
     def output_latex(self):
         self.ppa.output(f"{self.ppa.function[0]}={sy.printing.latex(self.ppa.function[1], fold_short_frac=False, mul_symbol='dot', decimal_separator=self.ppa.dec_sep)}")
 
-    def output_func(self):
+    def output_cev(self):
         self.ppa.output(str(self.ppa.function[1]))
 
-    def delete_fun(self, none):
-        if nps.notify_yes_no("Do you really want to delete the function?"):
-            self.ppa.ses.funs.pop(self.ppa.function[0])
+    def delete_vec(self, none):
+        if nps.notify_yes_no("Do you really want to delete the vector?"):
+            self.ppa.ses.vecs.pop(self.ppa.function[0])
