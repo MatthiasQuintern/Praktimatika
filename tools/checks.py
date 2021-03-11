@@ -31,7 +31,8 @@ from numpy import array as nparray
              'DiracDelta', 'Heaviside', 'SingularityFunction', 'Gamma,BetaandrelatedFunctions', 'ErrorFunctionsandFresnelIntegrals', 'Exponential,LogarithmicandTrigonometricIntegrals', 'BesselTypeFunctions', 'AiryFunctions', 'B-Splines', 'RiemannZetaandRelatedFunctions', 'HypergeometricFunctions', 'Ellipticintegrals', 'MathieuFunctions', 'OrthogonalPolynomials', 'SphericalHarmonics', 'TensorFunctions']
 """
 # REGEX PATTERNS
-NAME = r"[a-zA-Z][a-zA-Z0-9]*(_[a-zA-Z0-9]*)*"
+NUMBER = r"((([0-9]+.[0-9]*)|\.[0-9]+)([eE]-?\d+)?)"
+NAME = r"([a-zA-Z][a-zA-Z0-9]*(_[a-zA-Z0-9]*)*)"
 DEF_FUNS = "((re)|(im)|(sign)|(Abs)|(arg)|(conjugate)|(polar_lift)|(periodic_argument)|(principal_branch)|(sin)|(cos)|(tan)|(cot)|(sec)|(csc)|(sinc)|(asin)|(acos)|(atan)|(acot)|(asec)|(acsc)|(atan2)|(HyperbolicFunction)|(sinh)|(cosh)|(tanh)|(coth)|(sech)|(csch)|(asinh)|(acosh)|(atanh)|(acoth)|(asech)|(acsch)|(ceiling)|(floor)|(RoundFunction)|(frac)|(exp)|(LambertW)|(log)|(exp_polar)|(ExprCondPair)|(Piecewise)|(IdentityFunction)|(Min)|(Max)|(root)|(sqrt)|(cbrt)|(real_root)|(Combinatorial)|(bell)|(bernoulli)|(binomial)|(catalan)|(euler)|(factorial)|(subfactorial)|(factorial2)|(doublefactorial)|(FallingFactorial)|(fibonacci)|(tribonacci)|(harmonic)|(lucas)|(genocchi)|(partition)|(MultiFactorial)|(RisingFactorial)|(stirling)|(nC)|(nP)|(nT)|(DiracDelta)|(Heaviside)|(SingularityFunction)|(ErrorFunctionsandFresnelIntegrals)|(BesselTypeFunctions)|(AiryFunctions)|(B-Splines)|(RiemannZetaandRelatedFunctions)|(HypergeometricFunctions)|(Ellipticintegrals)|(MathieuFunctions)|(OrthogonalPolynomials)|(SphericalHarmonics)|(TensorFunctions))"
 VALID = f"({NAME}|({DEF_FUNS}?"+r"\(\)))"
 VALID_F = VALID+r"(([+\-*/]|\*\*)"+VALID+")*"
@@ -135,17 +136,20 @@ def is_number_array(arr):
         return False
 
 
-def is_number(num: str):
-    if is_float(num):
+def is_number(num: str, allow_inf=True):
+    if is_float(num, allow_inf=allow_inf):
         return True
     elif is_int(num):
         return True
     return False
 
 
-def is_float(num: str):
+def is_float(num: str, allow_inf=True):
+    add = ""
+    if allow_inf:
+        add = "|(-?inf)"
     try:
-        if re.fullmatch(r"([0-9]+.[0-9]*)|\.[0-9]+", num):
+        if re.fullmatch(NUMBER + add, num):
             return True
     except TypeError:
         pass
@@ -174,33 +178,6 @@ def is_name(name: str):
     return False
 
 
-def str_to_arr(s: str, dtype=float):
-    """
-    Turns a string with into a nparry. Values must be separated with ,
-    :param s:       string like "[4, 5., .04] or (4.3, 2, 5, 9)
-    :param dtype:   data type
-    :return:        bool: success, array/None
-    """
-    s = s.strip("[]() \n")
-    arr = s.split(",")
-    try:
-        return True, nparray(arr, dtype=dtype)
-    except ValueError:
-        return False, None
 
-
-def str_to_list(s: str, length=None):
-    """
-    Turns a string with into a nparry. Values must be separated with ,
-    :param s:       string like "[4, 5., .04] or (4.3, 2, 5, 9)
-    :param length:  int: length of the array
-    :return:        bool: success, array/None
-    """
-    s = s.strip("[]() \n")
-    l = s.split(",")
-    if length:
-        if not len(l) == length:
-            return False, None
-    return True, l
 
 
