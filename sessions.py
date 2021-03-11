@@ -1,5 +1,5 @@
 import sympy as sy
-from tools import sheet_read, plot, checks
+from tools import sheet_read, plot, checks, tool
 import pickle as pk
 import re
 import sympy.abc as syv  # import all variables
@@ -158,16 +158,19 @@ class PKTSession:
         output = ""
         for vector in vecs:
             veclist = vector.replace(" ", "").split("=")
-            valid, array = checks.str_to_arr(veclist[1], dtype=dtype)
-            if valid:
-                # only add if "replace=True" or not already existing
-                if replace or veclist[0] not in self.vecs:
-                    self.vecs.update({veclist[0]: array})
-                    output += f"added {veclist[0]},"
+            try:
+                valid, array = tool.str_to_processed_arr(veclist[1], vecdict=self.vecs, dtype=dtype)
+                if valid:
+                    # only add if "replace=True" or not already existing
+                    if replace or veclist[0] not in self.vecs:
+                        self.vecs.update({veclist[0]: array})
+                        output += f"added {veclist[0]},"
+                    else:
+                        output += f"NOT added: {veclist[0]} (already existing),"
                 else:
-                    output += f"NOT added: {veclist[0]} (already existing),"
-            else:
-                output += f"NOT added: {vector.split('=')[0]} (invalid vector),"
+                    output += f"NOT added: {vector.split('=')[0]} (invalid vector),"
+            except IndexError:
+                output += f"NOT added: {vector} (invalid expression),"
         return output.strip(",")
 
     def add_table(self, path, sep=","):
@@ -258,28 +261,33 @@ class PKTSession:
         ax = None
         try:
             figsize = None
-            if checks.str_to_list(self.figs[figname]["figsize"])[0]:
-                figsize = checks.str_to_list(self.figs[figname]["figsize"])[1]
+            if tool.str_to_list(self.figs[figname]["figsize"])[0]:
+                figsize = tool.str_to_list(self.figs[figname]["figsize"])[1]
             for axes in self.figs[figname]["axes"]:
                 ax_d = self.figs[figname]["axes"][axes]
                 for pl in ax_d["plots"]:
-                    # get the arrays/data
+                    """# get the arrays/data
                     if ax_d["plots"][pl]["xdata"] in self.vecs:
                         xdata = self.vecs[ax_d["plots"][pl]["xdata"]]
                     # check if its an array
-                    elif checks.str_to_arr(ax_d["plots"][pl]["xdata"], float)[0]:
-                        xdata = checks.str_to_arr(ax_d["plots"][pl]["xdata"], float)[1]
+                    elif tool.str_to_arr(ax_d["plots"][pl]["xdata"], float)[0]:
+                        xdata = tool.str_to_arr(ax_d["plots"][pl]["xdata"], float)[1]
                     else:
                         raise TypeError("xdata is not in session vectors or array")
                     # get the arrays/data
                     if ax_d["plots"][pl]["ydata"] in self.vecs:
                         ydata = self.vecs[ax_d["plots"][pl]["xdata"]]
                     # check if its an array
-                    elif checks.str_to_arr(ax_d["plots"][pl]["ydata"], float)[0]:
-                        ydata = checks.str_to_arr(ax_d["plots"][pl]["ydata"], float)[1]
+                    elif tool.str_to_arr(ax_d["plots"][pl]["ydata"], float)[0]:
+                        ydata = tool.str_to_arr(ax_d["plots"][pl]["ydata"], float)[1]
                     else:
-                        raise TypeError("xdata is not in session vectors or array")
-
+                        raise TypeError("ydata is not in session vectors or array")"""
+                    xvalid, xdata = tool.str_to_processed_arr(ax_d["plots"][pl]["xdata"], vecdict=self.vecs)
+                    if not xvalid:
+                        raise TypeError(f"Invalid xdata: '{ax_d['plots'][pl]['xdata']}'")
+                    yvalid, ydata = tool.str_to_processed_arr(ax_d["plots"][pl]["ydata"], vecdict=self.vecs)
+                    if not yvalid:
+                        raise TypeError(f"Invalid ydata: '{ax_d['plots'][pl]['ydata']}'")
 
                     fig, ax = plot.plot(xdata, ydata, marker=ax_d["plots"][pl]["marker"],
                                         line=ax_d["plots"][pl]["line"], color=ax_d["plots"][pl]["color"], label=ax_d["plots"][pl]["label"],       # line options
@@ -308,9 +316,9 @@ class PKTSession:
         filename_valid = False
         path_valid = False
         status = "None"
-        if re.fullmatch("[a-zA-ZüÜöÖäÄ_\- ]+\.ptk", filename):  # check if entered filename is valid and has extension
+        if re.fullmatch(r"[a-zA-ZüÜöÖäÄ_\- ]+\.ptk", filename):  # check if entered filename is valid and has extension
             filename_valid = True
-        elif re.fullmatch("[a-zA-ZüÜöÖäÄ_\- ]+", filename):  # check if entered filename is valid but does not have extension
+        elif re.fullmatch(r"[a-zA-ZüÜöÖäÄ_\- ]+", filename):  # check if entered filename is valid but does not have extension
             filename += ".ptk"
             filename_valid = True
         else:
