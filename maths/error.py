@@ -11,10 +11,11 @@ def error_propagation(f: sy.Function, variables):
     """
     g = 0
     for var in variables:
-        if isinstance(var, sy.Symbol):
-            df = f.diff(var) * sy.Symbol(f"u{var}")
-            g = df ** 2 + g
+        if not isinstance(var, sy.Symbol):
+            if isinstance(var, str):
+                var = sy.Symbol(var)
+        df = f.diff(var) * sy.Symbol(f"u{var}")
+        g = df ** 2 + g
+
     return sy.sqrt(g)
 
-f = sy.sympify("cos(x)+exp(y)")
-print(error_propagation(f, ["x", "y"]))
