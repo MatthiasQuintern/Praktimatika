@@ -124,6 +124,7 @@ class Praktimatika(nps.NPSAppManaged):
         # BUILTIN FUNCTION MENUS
         self.weighted_median = self.addForm("weighted_median", tui_functions.WeightedMedian, name="Weighted Median")
         self.error_prop = self.addForm("error_prop", tui_user_functions.ErrorPropagation, name="Error Propagation")
+        self.curve_fit = self.addForm("curve_fit", tui_user_functions.CurveFit, name="Curve Fitting")
         # PLOT MENUS
         self.plot = self.addForm("plot", tui_plot.AxesMenu, name="Plot Menu")   # remove!
         self.pl_fig = self.addForm("pl_fig", tui_plot.FigMenu, name="Plot Menu - Figure")
