@@ -1,14 +1,16 @@
 import re
 
+from tools import tool
 
-def latex_table(form, vectors: dict, first_line="", box=True, decimal_sep=",", significant_digits=2):
+
+def latex_table(formstring, vectors: dict, first_line="", box=True, decimal_sep=",", significant_digits=2):
     """
     Converts Vectors to a latex table
     :param decimal_sep:
     :param significant_digits:
-    :param form:            form string: contains format with vector names
-    :param vectors:         dictionaries, contains vectorname: vector
-    :param first_line:      first line of the table (eg to include units)
+    :param formstring:              form string: contains format with vector names, eg "v & w pm uw"
+    :param vectors:                 dictionaries, contains vectorname: vector
+    :param first_line:              first line of the table (eg to include units)
     :param box:
     :return:
     """
@@ -19,27 +21,40 @@ def latex_table(form, vectors: dict, first_line="", box=True, decimal_sep=",", s
         hline = r"\hline"
         vline = "|"
 
-    form = form.replace(" ", "").split("&")
+    form = formstring.replace(" ", "").split("&")
     latex_form = ""  # the |l|c|c| thing
     # get one line for each vector value (vector length), assumed that all vectors have the same length
-    lines = ["$" for i in range(len(list(vectors.values())[0]))]
+    lines = ["$" for i in range(tool.get_max_vec_length(list(vectors.values())))]
 
     for j in range(len(form)):
         latex_form += f"{vline}c"
+        # get the processed arrays
+        if re.fullmatch(".+pm.+", form[j]):
+            v = tool.str_to_processed_arr(form[j].split("pm")[0], vecdict=vectors)[1]
+            uv = tool.str_to_processed_arr(form[j].split("pm")[1], vecdict=vectors)[1]
+        else:
+            v = tool.str_to_processed_arr(form[j], vecdict=vectors)[1]
+            uv = None
         for i in range(len(lines)):
             # if val pm uncert pair
-            if re.fullmatch(".+pm.+", form[j]):
-                lines[i] += str(vectors[form[j].split("pm")[0]][i]) + r"\pm" + str(vectors[form[j].split("pm")[1]][i])
-            else:
-                lines[i] += str(vectors[form[j]][i])
-            # if at end
-            if j == len(form) - 1:
-                lines[i] += "$\t\t" + r"\\ " + hline + "\n"
-            else:
-                lines[i] += "$\t& $"
+            try:
+
+                if uv is not None:
+                    lines[i] += str(v[i]).replace(".", decimal_sep) + r"\pm" + str(uv[i]).replace(".", decimal_sep)
+                else:
+                    lines[i] += str(v[i]).replace(".", decimal_sep)
+            except IndexError:
+                lines[i] += "-"
+            finally:
+                # if at end
+                if j == len(form) - 1:
+                    lines[i] += "$\t\t" + r"\\ " + hline + "\n"
+                else:
+                    lines[i] += "$\t& $"
     latex_form += vline
 
-    output = r"\begin{table}[h]" + "\n\t" + r"\centering" + "\n\t" + r"\begin{tabular}{" + latex_form + "}\n\t\t" + hline + "\n"
+    output = r"\begin{table}[h]" + "\n\t" + r"\centering" + "\n\t" + r"\begin{tabular}{" + latex_form + "}\n\t\t" + hline + "\n\t\t"
+    output += f"%{formstring}\n"
     for line in lines:
         output += "\t\t" + line
     output += "\t" + r"\end{tabular}" + "\n\t" + r"% \caption{}" + "\n\t" + r"% \label{tab:}" + "\n" + r"\end{table}" + "\n"
