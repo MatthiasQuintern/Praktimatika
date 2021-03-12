@@ -59,20 +59,20 @@ class SaveMenu(nps.FormBaseNew):
 class StartupMenu(nps.FormBaseNewWithMenus):
     def create(self):
         MAXY, MAXX = self.lines, self.columns
-        self.title = self.add(nps.FixedText, name="Title", editable=False, value=f"Welcome to Praktimatika:{MAXY, MAXX, self.BLANK_LINES_BASE}")
+        self.title = self.add(nps.FixedText, name="Title", editable=False, value=f"Welcome to Praktimatika Version {self.parentApp.version}")
         self.select = self.add(nps.TitleSelectOne, scroll_exit=True, max_height=2, name='Load Session?', value=[0], values=['No, create new session', 'Load PKTSession from file (.ptk)'])
         self.input_file = self.add(nps.TitleFilenameCombo, name="Select File")
         self.status = self.add(nps.Textfield, rely=MAXY - 3, relx=2, editable=False, value="Status: Waiting for user selection.")
         self.b_start = self.add(nps.ButtonPress, rely=8, name="Start", when_pressed_function=self.on_ok)
         self.b_exit = self.add(nps.ButtonPress, rely=8, relx=10, name="Exit", when_pressed_function=self.parentApp.exit_app)
         # self.button = self.add(nps.MiniButtonPress, name="Start", when_pressed_function=self.start_conversion)
-        # OWN STUFF
+        """# OWN STUFF
         self.mmenu = self.new_menu(name="Select Theme:", shortcut="^G")  # Todo: shortcut not working
         self.mmenu.addItemsFromList([("Light Font", nps.setTheme, None, None, (nps.Themes.TransparentThemeLightText, )),
                                      ("Dark Font", nps.setTheme, None, None, (nps.Themes.TransparentThemeDarkText,)),
                                      ("Default", nps.setTheme, None, None, (nps.Themes.DefaultTheme,)),
                                      ("Colourful", nps.setTheme, None, None, (nps.Themes.ColorfulTheme,)),
-                                     ("Elegant", nps.setTheme, None, None, (nps.Themes.ElegantTheme,))])
+                                     ("Elegant", nps.setTheme, None, None, (nps.Themes.ElegantTheme,))])"""
 
     def on_ok(self):
         # TODO: Exception Handling
@@ -98,26 +98,51 @@ class StartupMenu(nps.FormBaseNewWithMenus):
 class Praktimatika(nps.NPSAppManaged):
     """Managed Application. Contains the Praktimatika PKTSession, so that all forms and widgets can access it."""
     def onStart(self):
+        self.version = "alpha 1"
+        self.settings = {
+            "print_output":    True,
+            "copy_clip":    True,
+            "dec_sep":      ",",
+            "theme":        "Default"
+        }
+        self.load_settings()
+        self.themes = {
+            "Default": nps.Themes.DefaultTheme,
+            "Colourful": nps.Themes.ColorfulTheme,
+            "Elegant": nps.Themes.ElegantTheme,
+            "Transparent-Light Font":  nps.Themes.TransparentThemeLightText,
+            "Transparent-Dark Font":   nps.Themes.TransparentThemeDarkText,
+        }
+
+        theme = nps.Themes.DefaultTheme
+        if self.settings["theme"] in self.themes:
+            theme = self.themes[self.settings["theme"]]
+
+        nps.setTheme(theme)
+
         self.print_out = True   # print outputs to file
         self.copy_clip = True   # copy outputs to clipboard
         self.dec_sep = ","      # for latex printing
         # stores a selected ... to be accessible for all forms: (name, value)
-        self.function = ("", None)  # the selected function
+        self.function = ("", None)
         self.variable = ("", None)
         self.vector = ("", None)
         self.constant = ("", None)
         #
-        nps.setTheme(nps.Themes.TransparentThemeLightText)
+
         # temp:
         # self.ses = sessions.load_session("session.ptk")
         self.ses = sessions.PKTSession(os.getcwd() + "/new_session.ptk")
         # nps.setTheme(nps.Themes.TransparentThemeLightText)
         self.start = self.addForm("MAIN", StartupMenu, name='Praktimatika Startup')
         # self.addForm("start", StartupMenu, name='Praktimatika Startup')
-        self.home = self.addForm("home", tui_home.HomeMenu, name="Praktimatika Home")
-        # Small Menues:
+        self.home = self.addForm("home", tui_home.HomeMenu, name=f"Praktimatika Home (Version {self.version})")
+        # APP MENUS
+        self.f_settings = self.addForm("settings", tui_home.Settings, name="Praktimatika Settings")
         self.save = self.addForm("save", SaveMenu, name="Save Praktimatika PKTSession")
         self.impor = self.addForm("import", tui_import.ImportMenu, name="Import vectors from a spreadsheet")
+
+        # FUNCTION MENUS
         self.func = self.addForm("m_fun", tui_user_functions.UserFuncMenu, name="Function Menu")
         self.func_calc = self.addForm("m_fun_calc", tui_user_functions.UserFuncCalc2, name="Calculation Menu")
 
@@ -137,6 +162,8 @@ class Praktimatika(nps.NPSAppManaged):
         # TOOLS
         self.latex = self.addForm("latex_table", tui_tools.LatexTable, name="Create Latex Table")
 
+
+
     def output(self, message):
         message = str(message)
         if self.print_out:
@@ -146,7 +173,8 @@ class Praktimatika(nps.NPSAppManaged):
             clip.clipboard_set(message)
         nps.notify_confirm(message)
 
-    def show_error(self, message, exception: BaseException):
+    @staticmethod
+    def show_error(message, exception: BaseException):
         """
         Shows an Error Message in an nps.notify_confirm Form
         :param message:     string, message
@@ -161,9 +189,44 @@ class Praktimatika(nps.NPSAppManaged):
         if nps.notify_yes_no("Are you sure you want to exit Praktimatika?", title='Exit Praktimatika'):
             sys.exit()
 
-    def change_setting(self, value):
-        # TODO
-        pass
+    def quicksave(self):
+        """
+        Quicksave and set the form's status to show the output of the check_save_session method
+        :return:
+        """
+        status = self.ses.check_save_session()
+
+        form = self.getForm(self.ACTIVE_FORM_NAME)
+        if hasattr(form, "status"):
+            form.status.value = status
+
+    def load_settings(self):
+        try:
+            with open("praktimatika.conf", "r") as file:
+                raw_list = file.readlines()
+                file.close()
+                for line in raw_list:
+                    if "#" in line:  # ignore commented lines
+                        continue
+                    line = line.replace("\n", "")
+                    temp_list = line.split(" = ")
+                    if temp_list[1] == "True":
+                        temp_list[1] = True
+                    elif temp_list[1] == "False":
+                        temp_list[1] = False
+                    self.settings.update({temp_list[0]: temp_list[1]})
+        except FileNotFoundError:
+            nps.notify_confirm("Could not load settings from 'praktimatika.conf'. File not found.")
+        except IndexError:
+            nps.notify_confirm("Could not load settings from 'praktimatika.conf'. Invalid file structure")
+
+    def save_settings(self):
+        with open("praktimatika.conf", "w") as file:
+            text = "# Praktimatika Config File. \n" \
+                   "# Content here will be overwritten when the settings are saved.\n"
+            for key, val in self.settings.items():
+                text += f"{key} = {val}\n"
+            file.write(text)
 
 
 if __name__ == '__main__':
