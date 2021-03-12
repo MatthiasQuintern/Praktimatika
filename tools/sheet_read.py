@@ -1,5 +1,4 @@
 import numpy as np
-from pandas import read_excel
 import re
 
 
@@ -26,8 +25,12 @@ def read_table(path, sep=","):
     """
     if re.fullmatch(r".*\.(xls|xlsx|xlsm|xlsb|odf|ods|odt)$", path):    # all pandas.read_excel supported filetypes
         try:
+            from pandas import read_excel
             return read_excel(path, keep_default_na=False, header=None).values.tolist()
         except FileNotFoundError as ex:
+            print(ex)
+            return [[]]
+        except ImportError as ex:
             print(ex)
             return [[]]
     else:

@@ -3,12 +3,13 @@ import sys
 import npyscreen as nps
 import sessions
 import re
-import pandas.io.clipboard as clip  # copy to clipboard
+# import pandas.io.clipboard as clip  # copy to clipboard
 from tui import tui_user_functions, tui_add, tui_plot
 from tui import tui_functions
 from tui import tui_import
 from tui import tui_home
 from tui import tui_tools
+
 
 #
 # SAVE MENU
@@ -44,18 +45,9 @@ class SaveMenu(nps.FormBaseNew):
                 self.filename.value = match.group(0)
 
 
-
-
-
-
-
-
-
 #
 # STARTUP
 #
-
-
 class StartupMenu(nps.FormBaseNewWithMenus):
     def create(self):
         MAXY, MAXX = self.lines, self.columns
@@ -93,8 +85,6 @@ class StartupMenu(nps.FormBaseNewWithMenus):
 #
 # APPLICATION
 #
-
-
 class Praktimatika(nps.NPSAppManaged):
     """Managed Application. Contains the Praktimatika PKTSession, so that all forms and widgets can access it."""
     def onStart(self):
@@ -120,15 +110,11 @@ class Praktimatika(nps.NPSAppManaged):
 
         nps.setTheme(theme)
 
-        self.print_out = True   # print outputs to file
-        self.copy_clip = True   # copy outputs to clipboard
-        self.dec_sep = ","      # for latex printing
         # stores a selected ... to be accessible for all forms: (name, value)
         self.function = ("", None)
         self.variable = ("", None)
         self.vector = ("", None)
         self.constant = ("", None)
-        #
 
         # temp:
         # self.ses = sessions.load_session("session.ptk")
@@ -162,15 +148,17 @@ class Praktimatika(nps.NPSAppManaged):
         # TOOLS
         self.latex = self.addForm("latex_table", tui_tools.LatexTable, name="Create Latex Table")
 
-
-
     def output(self, message):
         message = str(message)
-        if self.print_out:
+        if self.settings["print_output"]:
             with open("output.txt", "a") as out:
                 out.write(message + "\n")
-        if self.copy_clip:
-            clip.clipboard_set(message)
+        if self.settings["copy_clip"]:
+            try:
+                import pandas.io.clipboard as clip  # copy to clipboard
+                clip.clipboard_set(message)
+            except ImportError:
+                nps.notify_confirm("Con not copy output to clipboard. 'pandas' is not installed!\nPlease install python module 'pandas' to use this feature.")
         nps.notify_confirm(message)
 
     @staticmethod

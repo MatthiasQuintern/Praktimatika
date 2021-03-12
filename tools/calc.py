@@ -1,10 +1,12 @@
 import sympy as sy
 import re
 import numpy as np
-from scipy.optimize import curve_fit
+# from scipy.optimize import curve_fit
 
 
 # from https://docs.sympy.org/latest/modules/functions/index.html
+from tools import tool
+
 FUNCTIONS = ['re', 'im', 'sign', 'Abs', 'arg', 'conjugate', 'polar_lift', 'periodic_argument', 'principal_branch',
              #'sympy.functions.elementary.trigonometric',
              # 'TrigonometricFunctions',
@@ -69,7 +71,31 @@ def get_needed_values(f):
     return output
 
 
+def get_p0_bounds(order, values_dict):
+    """
+    returns a p0 list and a bounds list
+    :param order:           list with order of parameters: ["y", "x"]
+    :param values_dict:     {"x": "pmin, pmax, p0", "y": "..."}
+    :return:                [p0s], [pmins], [pmaxs]
+    """
+    p0 = []
+    pmin = []
+    pmax = []
+    if not len(order) == len(values_dict):
+        return None, None, None
+    for i in range(len(values_dict)):
+        valid, ls = tool.str_to_list(values_dict[order[i]], length=3)
+        if valid:
+            p0.append(ls[0])
+            pmin.append(ls[0])
+            pmax.append(ls[0])
+        else:
+            return None, None, None
+    return p0, pmin, pmax
+
+
 def fit(f, x, y, p0=None, bounds=(-np.inf, np.inf)):
+    from scipy.optimize import curve_fit
     params, covarmatrix = curve_fit(f, x, y, p0=p0, bounds=bounds)
     return params, covarmatrix
 
@@ -87,7 +113,7 @@ def str_fit(f, x, y, variable="x", ret_uncerts=True, p0=None, bounds=(-np.inf, n
     :param bounds:      dictionary bound for the fitparameters
     :return:            (sympy function, params, pcov)
     """
-    # TODO: p0, bounds
+
     variables = get_needed_values(f)
     # put the NOT fit parameter at first list pos, since scipy curve_fit treats the first arg as the variable and the rest as parameters
     variables.insert(0, variables.pop(variables.index(variable)))
