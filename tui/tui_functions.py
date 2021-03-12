@@ -9,7 +9,7 @@ from tui import tui_widgets as twid
 # ẞ
 # FORMS
 #
-class SaveVec(nps.FormBaseNew):
+class SaveVec(twid.BaseForm):
     """
     Menu to save vectors. BEFORE it is called, the "vector" attribute must be set to the vector
     """
@@ -51,7 +51,7 @@ class SaveVec(nps.FormBaseNew):
 #
 # WEIGHTED MEDIAN
 #
-class WeightedMedian(nps.FormBaseNew):
+class WeightedMedian(twid.BaseForm):
     DEFAULT_LINES = 20
     DEFAULT_COLUMNS = 120
     SHOW_ATX = 8

@@ -48,8 +48,8 @@ class AddFun(nps.FormBaseNew):
     def create(self):
         self.title = self.add(nps.MultiLine, rely=1, relx=3, editable=False, values=["Enter your functions line by line, eg:", "\tf = cos(2*x+4) / exp(y)", "\tg = x**2 + z**(x + 2)"])
         self.to_add = self.add(AddFunBox, rely=4, relx=3, max_height=7, exit_right=True, scroll_exit=True)
-        self.c_replace = self.add(nps.Checkbox, rely=12, relx=3, editable=True, name="Replace conflicting functions", value=False)
-        self.c_autoadd_vars = self.add(nps.Checkbox, rely=13, relx=3, editable=True, name="Automatically add missing variables", value=False)
+        self.c_replace = self.add(twid.CheckBox, rely=12, relx=3, editable=True, name="Replace conflicting functions", value=True)
+        self.c_autoadd_vars = self.add(twid.CheckBox, rely=13, relx=3, editable=True, name="Automatically add missing variables", value=True)
         self.b_add = self.add(nps.ButtonPress, rely=14, relx=1, name="Add Functions", when_pressed_function=self.add_funs)
         self.b_back = self.add(nps.ButtonPress, rely=15, relx=1, name="Go Back", when_pressed_function=self.parentApp.switchFormPrevious)
         self.status = self.add(nps.FixedText, rely=16, relx=3, editable=False, value="Press 'Enter' to start/stop writing in the textbox.")
@@ -70,7 +70,7 @@ class AddFun(nps.FormBaseNew):
 
 class AddFunBox(nps.MultiLineEditableBoxed):
     def when_cursor_moved(self):
-        self.parent.status.value += "Seems valid?"
+        self.parent.status.value += ""
         for line in self.values:
             if not checks.is_valid_fun(line):
                 self.parent.status.value = f"Invalid function: {line}"

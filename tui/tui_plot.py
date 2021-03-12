@@ -5,22 +5,25 @@ from tools import checks
 from tui import tui_widgets as twid
 from curses import ascii
 
-class PltMenu(nps.FormBaseNew):
+#
+# Base Form for the plot menus
+#
+class PltMenu(twid.BaseForm):
     col1 = 25
     col2 = 58
     def create(self):
         col1 = PltMenu.col1
         # "shortcut"
         self.figsd = self.parentApp.ses.figs
-        self.list = self.add(twid.TBPlotList, rely=2, relx=3, name="Properties", max_width=20, editable=True)
-        self.shortcuts = self.add(nps.FixedText, rely=self.lines - 4, relx=col1, editable=False, value="Shortcuts: ^M, ESC: Jump to Properties Menu")
+        self.list = self.add(twid.TBPlotList, rely=2, relx=3, name="Figures", max_width=20, editable=True)
+        self.shortcuts = self.add(nps.FixedText, rely=self.lines - 4, relx=col1, editable=False, value="Shortcuts: f: Jump to Figures Menu")
         self.status = self.add(nps.FixedText, rely=self.lines - 3, relx=col1, editable=False, value="Plot Menu")
         self.status.important = True  # makes it bold and green
 
         # TODO: handlers not working
         self.add_handlers({
-            "^M":       self.to_properties,
-            ascii.ESC:  self.to_properties,
+            "^K":             self.to_figures,
+            ord("f"):         self.to_figures,
         })
 
     def back_to_home(self):
@@ -32,10 +35,9 @@ class PltMenu(nps.FormBaseNew):
     def pre_edit_loop(self):
         self.list.update()
 
-    def to_properties(self):
-        nps.notify_confirm("to_properties")
+    def to_figures(self, *args):
         self.exit_editing()
-        self.set_editing(0)
+        self.set_editing(self.list)
 
         self.display()
 #

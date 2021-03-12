@@ -9,7 +9,7 @@ from maths import error
 #
 # FUNCTION MENU
 #
-class UserFuncMenu(nps.FormBaseNew):
+class UserFuncMenu(twid.BaseForm):
     DEFAULT_LINES = 20
     DEFAULT_COLUMNS = 90
     SHOW_ATX = 8
@@ -28,7 +28,7 @@ class UserFuncMenu(nps.FormBaseNew):
         self.fun.update()
 
 
-class UserFuncCalc2(nps.FormBaseNew):
+class UserFuncCalc2(twid.BaseForm):
     """
     lets the user input the values/vectors to calculate a function
     the function is used is the parentApp.function, which is selected
@@ -127,7 +127,7 @@ class UserFuncCalc2(nps.FormBaseNew):
             nps.notify_confirm("Could not save vector!")
 
 
-class ErrorPropagation(nps.FormBaseNew):
+class ErrorPropagation(twid.BaseForm):
     """
     Calculates the Error Propagation Function of a function
     """
@@ -190,7 +190,7 @@ class ErrorPropagation(nps.FormBaseNew):
             nps.notify_confirm("Could not process function! Either the function is invalid or name is empty")
 
 
-class CurveFit(nps.FormBaseNew):
+class CurveFit(twid.BaseForm):
     """
     lets the user curve-fit data with the function
     user must select xdata, ydata and "x" variable (the one that is NOT a parameter)
@@ -202,34 +202,36 @@ class CurveFit(nps.FormBaseNew):
 
     def create(self):
         y0 = 1
-        y1 = y0 + 5
+        y1 = y0 + 2
         col1 = 3
         col2 = 35
         self.cycle_widgets = True
 
-        self.title = self.add(nps.FixedText, editable=False, rely=1, relx=3, value="Create a Fit for the selected data")
+        self.t_title = self.add(nps.FixedText, editable=False, rely=1, relx=3, value="Select the x and y data and fit it to the function:")
         self.fun = self.add(nps.FixedText, editable=False, rely=2, relx=3, value="Function")
+        self.line0 = self.add(nps.FixedText, rely=y1, relx=col1, editable=False, value="\u2501" * 250)
         # DATA
         self.xdata = self.add(twid.TVecSelect, rely=y1+1, relx=col1, name="x-data:")
         self.ydata = self.add(twid.TVecSelect, rely=y1 + 2, relx=col1, name="y-data:")
-        self.desc1 = self.add(nps.FixedText, editable=False, rely=y1 + 3, relx=3, value="Select the variable which is NOT a parameter and change the settings if needed." + "\u2501" * 100)
+        self.t_desc1 = self.add(nps.FixedText, editable=False, rely=y1 + 4, relx=3, value="Select the variable which is NOT a parameter and change the settings if needed." + "\u2501" * 200)
 
         # PARAMETER SETTINGS
-        n_vals = self.create_param_select(y1+4, col2)
+        n_vals = self.create_param_select(y1+5, col2)
         y2 = y1 + 5 + n_vals + 1
-        self.line1 = self.add(nps.FixedText, rely=y2, relx=col1, editable=False, value="\u2501" * 200)
+        self.line1 = self.add(nps.FixedText, rely=y2, relx=col1, editable=False, value="\u2501" * 250)
         self.b_calc = self.add(nps.ButtonPress, rely=y2 + 1, relx=1, name="Calculate", when_pressed_function=self.fit)
 
-        # RESULTS
-        self.result = self.add(nps.FixedText, rely=y2 + 2, relx=3, value="Result:")
+        # FUNCTION RESULT
+        self.t_result = self.add(nps.FixedText, rely=y2 + 2, relx=3, editable=False, value="Result:")
         self.res_fun_name = self.add(nps.TitleText, rely=y2 + 3, relx=3, use_two_lines=False, name="Result name:", value="fit")
-        self.b_store_res = self.add(nps.ButtonPress, rely=y2 + 4, relx=1, name="Store as new Function", when_pressed_function=self.save_res)
+        self.res_fun = None
+        self.b_store_res = self.add(nps.ButtonPress, rely=y2 + 4, relx=1, name="Store as new Function", when_pressed_function=self.save_fun)
 
         self.b_back = self.add(nps.ButtonPress, rely=y2 + 5, relx=1, name="Go Back", when_pressed_function=self.parentApp.switchFormPrevious)
-
-        self.desc2 = self.add(nps.FixedText, editable=False, rely=y2 + 6, relx=3,
-                              value="Parameters Result: (press 's' on a parameter to save it)" + "\u2501" * 100)
-        self.res_vecs = self.add(twid.VecDisplay, rely=y2 + 7, max_height=n_vals + 1, values=["" for i in range(n_vals)])
+        # PARAM RESULT
+        self.t_desc2 = self.add(nps.FixedText, editable=False, rely=y2 + 6, relx=3,
+                              value="Parameters Result: (press 's' on a parameter to save it)" + "\u2501" * 200)
+        y3 = self.create_res_display(y2+6, col2)
 
         # status bar
         self.status = self.add(nps.FixedText, rely=self.max_y - 4, relx=3, editable=False, value="You can use 'Tab' key for autocompletion.")
@@ -255,6 +257,15 @@ class CurveFit(nps.FormBaseNew):
             self.varoptions.update({varlist[i]: self.add(twid.Input, rely=y+1+i, relx=col2, name=varlist[i], begin_entry_at=8, value="-inf, inf, 0", max_height=len(varlist)+1)})
         return len(varlist)
 
+    def create_res_display(self, y, col2):
+        self.res_params = []
+        self.res_uparams = []
+        for i in range(len(self.varselect.values)):
+            # create display for params
+            self.res_params.append(self.add(twid.SingleVecDisplay, rely=y+1+i, relx=3, field_width=col2-5, name=self.varselect.values[i], value="---"))
+            # same for u params
+            self.res_uparams.append(self.add(twid.SingleVecDisplay, rely=y + 1 + i, relx=col2, name="u"+self.varselect.values[i], value="---"))
+        return len(self.res_params)
 
     def pre_edit_loop(self):
         """
@@ -271,24 +282,39 @@ class CurveFit(nps.FormBaseNew):
         self.editw = 0
 
     def fit(self):
-        xvalid, xdata = self.xdata.get_vec()
-        yvalid, ydata = self.xdata.get_vec()
-        if xvalid and yvalid:
-            # put the NOT parameter at the beginning, params have to be after variable for scipy optimize
-            variables = self.varselect.values.insert(0, self.varselect.values.pop(self.varselect.value[0]))
-            f = calc.get_py_fun(self.parentApp.function[1], variables)
-            p0, pmin, pmax = tool.get_p0_bounds(variables, self.varoptions.values)
-            params, pcov = calc.fit(f, xdata, ydata, p0=p0, bounds=(pmin, pmax))
+        xdata = self.xdata.get_vec()
+        ydata = self.xdata.get_vec()
+        if xdata is None:
+            self.status.value = "Invalid x-data"
+        elif ydata is None:
+            self.status.value = "Invalid y-data"
+        else:
+            # put the NOT parameter at the beginning of the variable list, params have to be after variable for scipy optimize
+            variables = self.varselect.values.copy()
+            variables.insert(0, variables.pop(self.varselect.value[0]))
+            # create a dictionary for the parameter settings
+            settings = {}
+            for key, wid in self.varoptions.items():
+                settings.update({key: wid.value})
 
-        try:
-            self.result_val = cl.calculate(self.parentApp.function[1], )
-            self.result.value = f"Result: {self.result_val}"
-        except TypeError as ex:
-            self.parentApp.output(ex)
-        self.result.update()
+            p0, pmin, pmax = calc.get_p0_bounds(variables[1:], settings)
+            self.res_fun, params, uparams = calc.str_fit(self.parentApp.function[1], xdata, ydata, variable=variables[0], p0=p0, bounds=(pmin, pmax))
+            self.t_result.value = "Result: " + str(self.res_fun)
+            self.t_result.update()
+            for i in range(len(params)):
+                # store the parameter values in the SingleVecDisplay.vector
+                self.res_params[i].vector = params[i]
+                self.res_uparams[i].vector = uparams[i]
+                # display the values
+                self.res_params[i].value = str(params[i])
+                self.res_uparams[i].value = str(uparams[i])
+                # update widgets
+                self.res_params[i].update()
+                self.res_uparams[i].update()
 
-    def save_res(self):
-        if (checks.is_number(self.result_val) or checks.is_number_array(self.result_val)) and self.res_name.value != "":
-            self.parentApp.ses.add_vec(self.res_name.value, np.array(self.result_val))
+    def save_fun(self):
+        if self.res_fun is not None and self.res_fun_name.value != "":
+            self.parentApp.ses.add_funs([self.res_fun])
         else:
             nps.notify_confirm("Could not save vector!")
+

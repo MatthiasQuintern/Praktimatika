@@ -1,10 +1,10 @@
 import re
-
 import npyscreen as nps
 from tools import latex
+from tui import tui_widgets as twid
 
 
-class LatexTable(nps.FormBaseNew):
+class LatexTable(twid.BaseForm):
     DEFAULT_LINES = 15
     DEFAULT_COLUMNS = 120
     SHOW_ATX = 8

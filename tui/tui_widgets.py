@@ -4,6 +4,8 @@ from tools import checks, tool
 from npyscreen import wgwidget as widget
 from curses import ascii
 import sympy as sy
+
+
 #
 # BASE WIDGETS
 #
@@ -96,8 +98,16 @@ class VecSelect(nps.Autocomplete):
             return vector
         return None
 
+
 class TVecSelect(nps.TitleText):
     _entry_type = VecSelect
+
+    def get_vec(self):
+        """Returns the vector from the Input via the tools.tool. str_to_processed_array method"""
+        valid, vector = tool.str_to_processed_arr(self.value, self.parent.parentApp.ses.vecs)
+        if valid:
+            return vector
+        return None
 
 
 class VecDisplay(nps.MultiLineAction):
@@ -140,7 +150,8 @@ class BVecDisplay(nps.BoxTitle):
 
 
 class SingleVecDisplay(nps.TitleFixedText):
-    """Display Vector and call the save menu when it is clicked"""
+    """Display Vector and call the save menu when it is clicked
+    Save the actual vector in the 'vector' attribute"""
     def __init__(self, screen, begin_entry_at=16, field_width=None,
                  value=None, use_two_lines=False, hidden=False, labelColor='STANDOUT', allow_override_begin_entry_at=True, *args, **keywords):
 
@@ -321,3 +332,24 @@ class UserFuncAction(nps.MultiLineAction):
     def delete_vec(self, none):
         if nps.notify_yes_no("Do you really want to delete the vector?"):
             self.ppa.ses.vecs.pop(self.ppa.function[0])
+
+
+#
+# BASE FORM WITH HANDLERS
+#
+class BaseForm(nps.FormBaseNew):
+    def set_up_handlers(self):
+        self.complex_handlers = []
+        self.handlers = {
+            curses.KEY_F1:          self.h_display_help,
+            "KEY_F(1)":             self.h_display_help,
+            "^O":                   self.h_display_help,
+            "^L":                   self.h_display,
+            curses.KEY_RESIZE:      self._resize,
+            curses.KEY_OPTIONS:       self.parentApp.switchFormPrevious,
+            curses.KEY_F2:          self.go_home,
+        }
+
+    def go_home(self, *args):
+        self.parentApp.switchForm("home")
+
