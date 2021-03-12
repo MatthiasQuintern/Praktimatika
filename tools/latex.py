@@ -73,3 +73,18 @@ def get_significant_pair(value, uncert, sig_digits):
     sig_val = ""
     for char in value:
         pass
+
+
+def number_to_latex(number, dec_sep=","):
+    # turn number to string and replace e-xx with \cdot 10^{-xx}
+    num = str(number)
+    match = re.search(r"e-?\d+", num)
+    if match:
+        num.replace(match.group(), "")
+        return num + r"\cdot 10^{"+match.group().replace("e", "")+"}"
+
+    return num
+n = 123456789e8
+n1 = 12345678.9123456789
+
+print(number_to_latex(n), number_to_latex(n1))
