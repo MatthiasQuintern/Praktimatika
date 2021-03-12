@@ -6,24 +6,26 @@ Praktimatika needs other python libraries for some features. Install them with p
 ### Mandatory
 - npyscreen:        Terminal User Interface
 - windows-curses    Terminal User Interface. Only needed by *Windows* users.
-- sympy:            symbolic mathmatics in python
+- numpy:            numeric mathematics in python  
+- sympy:            symbolic mathematics in python
 
 ### Optional (but recommended) Dependencies
-- pandas:       copying to clipboard and importing xlsx, ods ...
+- pandas:           copying to clipboard and importing xlsx, ods ...
+- scipy:            curve fitting
 
 ## Usage
-Praktimatika can not be run from an IDE. You have to run it from a terminal emulator (e.g. Windows PowerShell).
+Praktimatika should be run in a terminal emulator (e.g. Windows PowerShell), it won't work in an IDE.
 To start the application open your terminal, navigate to the location of the "Praktimatika.py" and type:
 `python Praktimatika.py` on Windows and `python3 Praktimatika.py` on Linux
 
 ## Usage in scripts
-If you want to use functions from the programm in a python script, you can just import the needed module. The User Interface is strictly separated from mathmatical functionality, so everything can be used outside Praktimatika.
-For example, to use the *Smart Import* Function in a script you can use:
-`from tools import sheet_read as sr`
-`arrays = sr.get_vecs(sr.read_table("path_to_your_spread_sheet/spread_sheet.xlsx"))`
+If you want to use modules from the program in a python script, you can just import the needed module. The User Interface is strictly separated from the mathematical functionality, so everything can be used outside Praktimatika.
+For example, to use the *Smart Import* function in a script you can use:
+    `from tools import sheet_read as sr`
+    `arrays = sr.get_vecs(sr.read_table("path_to_your_spread_sheet/spread_sheet.xlsx"))`
 If your script is inside another folder than the Praktimatika files, use
-`import sys`
-`sys.path.append("path_to_praktimatika_folder")`
+    `import sys`
+    `sys.path.append("path_to_praktimatika_folder")`
 before the import statement.
 
 ## Sessions
