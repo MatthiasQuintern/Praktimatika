@@ -101,35 +101,6 @@ def str_to_list(s: str, length=None):
     return True, l
 
 
-v = np.array([1, 2.6, 3, 4, 5, 6, .7, 8])
-w = np.array([1, 2.60, 13, -46, 5, 36.55, .709, 1])
-d = {"ve": v, "w_69": w}
-print(str_to_processed_arr("w_69*ve/2", vecdict=d))
-
-
-def get_p0_bounds(order, values_dict):
-    """
-    returns a p0 list and a bounds list
-    :param order:
-    :param values_dict:      {"x": "pmin, pmax, p0", "y": "..."}
-    :return:            [p0s], [pmins], [pmaxs]
-    """
-    p0 = []
-    pmin = []
-    pmax = []
-    if not len(order) == len(values_dict):
-        return None, None, None
-    for i in range(len(values_dict)):
-        valid, ls = str_to_list(values_dict[order[i]], length=3)
-        if valid:
-            p0.append(ls[0])
-            pmin.append(ls[0])
-            pmax.append(ls[0])
-        else:
-            return None, None, None
-    return p0, pmin, pmax
-
-
 def get_max_vec_length(vecs):
     max_l = 0
     for vec in vecs:

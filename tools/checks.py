@@ -6,16 +6,16 @@ import re
 import os
 from numpy import array as nparray
 
-"""# from https://docs.sympy.org/latest/modules/functions/index.html
- FUNCTIONS = ['re', 'im', 'sign', 'Abs', 'arg', 'conjugate', 'polar_lift', 'periodic_argument', 'principal_branch',
-             #'sympy.functions.elementary.trigonometric',
+# from https://docs.sympy.org/latest/modules/functions/index.html
+FUNCTIONS = ['re', 'im', 'sign', 'Abs', 'arg', 'conjugate', 'polar_lift', 'periodic_argument', 'principal_branch',
+             # 'sympy.functions.elementary.trigonometric',
              # 'TrigonometricFunctions',
              'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinc',
              # 'TrigonometricInverses',
              'asin', 'acos', 'atan', 'acot', 'asec', 'acsc', 'atan2',
              # 'sympy.functions.elementary.hyperbolic', 'HyperbolicFunctions',
              'HyperbolicFunction', 'sinh', 'cosh', 'tanh', 'coth', 'sech', 'csch',
-             #'HyperbolicInverses',
+             # 'HyperbolicInverses',
              'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch',
              # 'sympy.functions.elementary.integers',
              'ceiling', 'floor', 'RoundFunction', 'frac',
@@ -24,12 +24,16 @@ from numpy import array as nparray
              # 'sympy.functions.elementary.piecewise',
              'ExprCondPair', 'Piecewise',
              # 'sympy.functions.elementary.miscellaneous',
-             'IdentityFunction', 'Min', 'Max', 'root', 'sqrt', 'cbrt', 'real_root', 'Combinatorial', 'bell', 'bernoulli', 'binomial', 'catalan', 'euler', 'factorial', 'subfactorial', 'factorial2/doublefactorial', 'FallingFactorial', 'fibonacci', 'tribonacci', 'harmonic', 'lucas', 'genocchi', 'partition', 'MultiFactorial', 'RisingFactorial', 'stirling',
+             'IdentityFunction', 'Min', 'Max', 'root', 'sqrt', 'cbrt', 'real_root', 'Combinatorial', 'bell', 'bernoulli', 'binomial', 'catalan', 'euler', 'factorial',
+             'subfactorial', 'factorial2/doublefactorial', 'FallingFactorial', 'fibonacci', 'tribonacci', 'harmonic', 'lucas', 'genocchi', 'partition', 'MultiFactorial',
+             'RisingFactorial', 'stirling',
              # 'Enumeration',
              'nC', 'nP', 'nT',
              # 'Special',
-             'DiracDelta', 'Heaviside', 'SingularityFunction', 'Gamma,BetaandrelatedFunctions', 'ErrorFunctionsandFresnelIntegrals', 'Exponential,LogarithmicandTrigonometricIntegrals', 'BesselTypeFunctions', 'AiryFunctions', 'B-Splines', 'RiemannZetaandRelatedFunctions', 'HypergeometricFunctions', 'Ellipticintegrals', 'MathieuFunctions', 'OrthogonalPolynomials', 'SphericalHarmonics', 'TensorFunctions']
-"""
+             'DiracDelta', 'Heaviside', 'SingularityFunction', 'Gamma,BetaandrelatedFunctions', 'ErrorFunctionsandFresnelIntegrals',
+             'Exponential,LogarithmicandTrigonometricIntegrals', 'BesselTypeFunctions', 'AiryFunctions', 'B-Splines', 'RiemannZetaandRelatedFunctions', 'HypergeometricFunctions',
+             'Ellipticintegrals', 'MathieuFunctions', 'OrthogonalPolynomials', 'SphericalHarmonics', 'TensorFunctions']
+
 # REGEX PATTERNS
 NUMBER = r"((([0-9]+.[0-9]*)|\.[0-9]+)([eE]-?\d+)?)"
 NAME = r"([a-zA-Z][a-zA-Z0-9]*(_[a-zA-Z0-9]*)*)"

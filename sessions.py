@@ -1,38 +1,9 @@
-import sympy as sy
 from tools import sheet_read, plot, checks, tool
 import pickle as pk
 import re
+import sympy as sy
 import sympy.abc as syv  # import all variables
 import os
-from constants import m_e
-
-# from https://docs.sympy.org/latest/modules/functions/index.html
-FUNCTIONS = ['re', 'im', 'sign', 'Abs', 'arg', 'conjugate', 'polar_lift', 'periodic_argument', 'principal_branch',
-             # 'sympy.functions.elementary.trigonometric',
-             # 'TrigonometricFunctions',
-             'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinc',
-             # 'TrigonometricInverses',
-             'asin', 'acos', 'atan', 'acot', 'asec', 'acsc', 'atan2',
-             # 'sympy.functions.elementary.hyperbolic', 'HyperbolicFunctions',
-             'HyperbolicFunction', 'sinh', 'cosh', 'tanh', 'coth', 'sech', 'csch',
-             # 'HyperbolicInverses',
-             'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch',
-             # 'sympy.functions.elementary.integers',
-             'ceiling', 'floor', 'RoundFunction', 'frac',
-             # 'sympy.functions.elementary.exponential',
-             'exp', 'LambertW', 'log', 'exp_polar',
-             # 'sympy.functions.elementary.piecewise',
-             'ExprCondPair', 'Piecewise',
-             # 'sympy.functions.elementary.miscellaneous',
-             'IdentityFunction', 'Min', 'Max', 'root', 'sqrt', 'cbrt', 'real_root', 'Combinatorial', 'bell', 'bernoulli', 'binomial', 'catalan', 'euler', 'factorial',
-             'subfactorial', 'factorial2/doublefactorial', 'FallingFactorial', 'fibonacci', 'tribonacci', 'harmonic', 'lucas', 'genocchi', 'partition', 'MultiFactorial',
-             'RisingFactorial', 'stirling',
-             # 'Enumeration',
-             'nC', 'nP', 'nT',
-             # 'Special',
-             'DiracDelta', 'Heaviside', 'SingularityFunction', 'Gamma,BetaandrelatedFunctions', 'ErrorFunctionsandFresnelIntegrals',
-             'Exponential,LogarithmicandTrigonometricIntegrals', 'BesselTypeFunctions', 'AiryFunctions', 'B-Splines', 'RiemannZetaandRelatedFunctions', 'HypergeometricFunctions',
-             'Ellipticintegrals', 'MathieuFunctions', 'OrthogonalPolynomials', 'SphericalHarmonics', 'TensorFunctions']
 
 
 # load and unpickle a PTKSession object
@@ -54,14 +25,19 @@ class PKTSession:
         self.path = path
         self.funs = {}
         self.vars = {"x": syv.x, "y": syv.y, "z": syv.z}
-        self.consts = {"m_e": m_e}
+        try:
+            from constants import const_d
+        except ImportError:
+            const_d = {}
+        self.consts = const_d
+
         self.vecs = {}
         self.figs = {}
         self._dicts = {
             "Functions":    self.funs,
             "Variables":    self.vars,
             "Constants":    self.consts,
-            "Vectors":      self.vecs,
+            "Arrays":       self.vecs,
             "Plots":        self.figs,
         }
 
@@ -134,7 +110,7 @@ class PKTSession:
         output = ""
         strings = re.findall(r"[a-zA-Z]+[a-zA-Z0-9_]*", fun)
         for string in strings:
-            if not string in self.vars and not string in FUNCTIONS and (string not in self.funs or not include_funs) and (string not in self.consts or not include_constants):
+            if not string in self.vars and not string in checks.FUNCTIONS and (string not in self.funs or not include_funs) and (string not in self.consts or not include_constants):
                 self.add_var(string)
                 output += f"added var: {string},"
         return output
@@ -266,22 +242,6 @@ class PKTSession:
             for axes in self.figs[figname]["axes"]:
                 ax_d = self.figs[figname]["axes"][axes]
                 for pl in ax_d["plots"]:
-                    """# get the arrays/data
-                    if ax_d["plots"][pl]["xdata"] in self.vecs:
-                        xdata = self.vecs[ax_d["plots"][pl]["xdata"]]
-                    # check if its an array
-                    elif tool.str_to_arr(ax_d["plots"][pl]["xdata"], float)[0]:
-                        xdata = tool.str_to_arr(ax_d["plots"][pl]["xdata"], float)[1]
-                    else:
-                        raise TypeError("xdata is not in session vectors or array")
-                    # get the arrays/data
-                    if ax_d["plots"][pl]["ydata"] in self.vecs:
-                        ydata = self.vecs[ax_d["plots"][pl]["xdata"]]
-                    # check if its an array
-                    elif tool.str_to_arr(ax_d["plots"][pl]["ydata"], float)[0]:
-                        ydata = tool.str_to_arr(ax_d["plots"][pl]["ydata"], float)[1]
-                    else:
-                        raise TypeError("ydata is not in session vectors or array")"""
                     xvalid, xdata = tool.str_to_processed_arr(ax_d["plots"][pl]["xdata"], vecdict=self.vecs)
                     if not xvalid:
                         raise TypeError(f"Invalid xdata: '{ax_d['plots'][pl]['xdata']}'")
@@ -322,7 +282,7 @@ class PKTSession:
             filename += ".ptk"
             filename_valid = True
         else:
-            status = "Invalid filename. Name must only contain: 'a-zA-ZüÜäÄöÖ_- '"
+            status = f"Invalid filename '{filename}'. Name must only contain: 'a-zA-ZüÜäÄöÖ_- '"
 
         if os.path.isdir(path):  # check if entered path is valid dir
             if not re.fullmatch(".+/$", path):  # check if "/" is at the end of the directory
@@ -330,14 +290,14 @@ class PKTSession:
             path_valid = True
             if not os.access(path, os.W_OK):  # Check for write access
                 path_valid = False
-                status = "Invalid directory: Not enough permission to write in directory"
+                status = f"Invalid directory '{path}'. Not enough permission to write in directory"
         elif os.path.isfile(path):  # check if entered path is a file
-            status = "Invalid directory: directory is a file. Please remove the filename from the path."
+            status = f"Invalid directory '{path}'. Directory is a file. Please remove the filename from the path."
 
         if filename_valid and path_valid:
             if isinstance(self, PKTSession):
                 self.save_session_as(path + filename)  # call the save_as method from the session
-                status = "PKTSession saved successfully."
+                status = "PKT-Session saved successfully."
             else:
                 status = "Error: No session is loaded."
 
@@ -345,9 +305,9 @@ class PKTSession:
             if isinstance(self, PKTSession):
                 if os.access(self.path, os.W_OK) and os.path.isfile(self.path):  # check for write access and if path is a file
                     self.save_session()  # save the session with the internal path
-                    status = "PKTSession saved successfully."
+                    status = "PKT-Session saved successfully."
                 else:
-                    status = "Invalid Path: PKTSession contains invalid path no other was given."
+                    status = "Invalid Path: PKT-Session contains invalid path no other was given."
             else:
                 status = "Error: No session is loaded."
         return status
