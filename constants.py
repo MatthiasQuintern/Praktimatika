@@ -78,7 +78,7 @@ ep_0 = Constant("vacuum electric permittivity",
                 source="https://www.physics.nist.gov/cgi-bin/cuu/Value?ep0")
 
 e = Constant("elemtary charge",
-             1.602176634e-27,
+             1.602176634e-19,
              unit="C",
              source="https://physics.nist.gov/cgi-bin/cuu/Value?e")
 
