@@ -14,46 +14,61 @@ def range_plot(f, xmin=0, xmax=1, steps=1000,  **keywords):
     :return:            matplotlib figure, matplotlib axis
     """
     dx = abs(xmax - xmin) / steps
-    # np.arange seems to leave out the upper value, so x1+dx gives x1 as the highest value
     xdata = np.arange(xmin, xmax, dx)
-    ydata = np.empty([steps + 1])
-
-    for i in range(0, steps + 1, 1):
+    ydata = np.empty([steps])
+    for i in range(0, steps, 1):
         ydata[i] = f(xdata[i])
     fig, ax = plot(xdata, ydata, **keywords)
     return fig, ax
 
 
-def plot(xdata, ydata, marker=None, line="-", color=None, label=None,       # line options
-         fig=None, ax=None, dpi=300, figsize=None,                                     # figure/axes options
-         title=None, xlabel=None, ylabel=None, legend=False, fontsize="13", # labels....
-         grid="major", gline="-", gcolor="#888",
-         xlim=None, ylim=None, xscale="linear", yscale="linear",                                  # axes options
-         show=True):
+def plot(xdata=None, ydata=None, marker=None, line="-", color=None, label=None,                   # line options
+         xerr=None, yerr=None,
+         # ecolor=None, elinewidth=None, capsize=None, barsabove=False, lolims=False, uplims=False, xlolims=False, xuplims=False, errorevery=1, capthick=None
+         fig=None, dpi=300, figsize=None,                                               # figure/axes options
+         tight_layout=True, constrained_layout=False,
+         ax=None, xlim=None, ylim=None, xscale="linear", yscale="linear",               # axes options
+         title=None, xlabel=None, ylabel=None, legend=False, fontsize="13",             # labels options
+         grid="major", gline="-", gcolor="#888",                                        # grid options
+         show=False):
     """
-    :param figsize:
-    :param grid:    "major", "minor", "both"
-    :param gcolor   wie color
-    :param gline    wie line
-    :param dpi:
-    :param label:
-    :param color:   b g r c m y k w
-    :param line:    - -- -. :
-    :param marker:  .,ov^<>1234sp*hH+Dd|_
-    :param xdata:
-    :param ydata:
-    :param fig:     pyplot figure object
-    :param ax:      axes object
-    :param title:   title pf the plot
-    :param xlabel:  x-axis label
-    :param ylabel:  y-axis label
-    :param xscale:  "linear", "log", "symlog", "logit", ..
-    :param yscale:  "linear", "log", "symlog", "logit", ..
-    :return:        matplotlib figure object, matplotlib axes object
+        data:
+            :param xdata:
+            :param ydata:
+        errors
+            :param xerr:    x-Errors, float or array-like, shape(N,) or shape(2, N)
+            :param yerr:    y-Errors, float or array-like, shape(N,) or shape(2, N)
+        line options
+            :param label:   a label to use in the legend
+            :param color:   b g r c m y k w
+            :param line:    - -- -. :
+            :param marker:  .,ov^<>1234sp*hH+Dd|_
+        figure options
+            :param fig:     pass an existing pyplot figure object
+            :param dpi:     resolution of the figure
+            :param figsize: x/y size of the figure, array-like, shape(2)
+            :param fontsize:
+            :param tight_layout:
+            :param constrained_layout:
+        axis options
+            :param ax:      pass an existing axis object
+            :param title:   title pf the plot
+            :param xlabel:  x-axis label
+            :param ylabel:  y-axis label
+            :param legend:  wether to turn on the legend. is automatically set True if a label for the data is given
+            :param xscale:  "linear", "log", "symlog", "logit", ..
+            :param yscale:  "linear", "log", "symlog", "logit", ..
+            :param xlim:    limits for the x-axis, array-like, shape(2)
+            :param ylim:    limits for the y-axis, array-like, shape(2)
+        grid options
+            :param grid:    "major", "minor", "both", "none"
+            :param gcolor   grid color, see 'color'
+            :param gline    grid line style, see 'line'
+        other
+            :param show:    wether to call plt.show() at the end
+        :return:        matplotlib figure object, matplotlib axes object
 
-
-            **Markers**
-
+        **Markers**
         =============    ===============================
         character        description
         =============    ===============================
@@ -82,7 +97,6 @@ def plot(xdata, ydata, marker=None, line="-", color=None, label=None,       # li
         =============    ===============================
 
         **Line Styles**
-
         =============    ===============================
         character        description
         =============    ===============================
@@ -92,18 +106,8 @@ def plot(xdata, ydata, marker=None, line="-", color=None, label=None,       # li
         ``':'``          dotted line style
         =============    ===============================
 
-        Example format strings::
-
-            'b'    # blue markers with default shape
-            'or'   # red circles
-            '-g'   # green solid line
-            '--'   # dashed line with default color
-            '^k:'  # black triangle_up markers connected by a dotted line
-
         **Colors**
-
         The supported color abbreviations are the single letter codes
-
         =============    ===============================
         character        color
         =============    ===============================
@@ -122,8 +126,8 @@ def plot(xdata, ydata, marker=None, line="-", color=None, label=None,       # li
     plt.rcParams.update({
         "font.size": fontsize,
         # "text.usetex": True,
-        "font.family": "sans-serif",
-        "font.sans-serif": ["Helvetica", "Avant Garde", "Computer Modern Sans serif"]})
+        "font.sans-serif": ["Helvetica", "Avant Garde", "Computer Modern Sans serif"],
+        "font.family": "sans-serif"})
 
     # Check if marker, line and color are valid, set None otherwise
     if not (isinstance(marker, str) and marker in ".,ov^<>1234sp*hH+Dd|_:"):
@@ -142,15 +146,36 @@ def plot(xdata, ydata, marker=None, line="-", color=None, label=None,       # li
     except TypeError:
         pass
 
-    # figure:
-    # figsize=None, dpi=None, facecolor=None, edgecolor=None, linewidth=0.0, frameon=None, subplotpars=None, tight_layout=None, constrained_layout=None
-    # create a new figure is none is given:
+    # create new figure is none is given
     if not fig:
-        fig = plt.figure(figsize=fsize, dpi=dpi, linewidth=1.0, frameon=True, subplotpars=None, tight_layout=True, constrained_layout=None)
+        fig = plt.figure(figsize=fsize, dpi=dpi, linewidth=1.0, frameon=True, subplotpars=None, tight_layout=tight_layout, constrained_layout=constrained_layout)
+    # create new axis if none is given
     if not ax:
         ax = fig.add_subplot(xlabel=xlabel, ylabel=ylabel, xscale=xscale, yscale=yscale)
-    ax.plot(xdata, ydata, color=color, marker=marker, linestyle=line, label=label)
 
+    # check which data is given
+    # xdata -> vertical lines
+    # ydata -> horizontal lines
+    # xdata and ydata -> plot
+    # xdata and ydata and (xerr or yerr) -> errorbar
+
+    if xdata is not None and ydata is not None:
+        # if errors are given, use errorbar. else use plot
+        if xerr is not None or yerr is not None:
+            ax.errorbar(xdata, ydata, xerr=xerr, yerr=yerr, color=color, marker=marker, linestyle=line, label=label, ecolor=color, capsize=4)
+        else:
+            ax.plot(xdata, ydata, color=color, marker=marker, linestyle=line, label=label)
+
+    elif xdata is not None:
+        ax.vlines(xdata, colors=color, linestyles=line, label=label)
+
+    elif ydata is not None:
+        ax.hlines(ydata, colors=color, linestyles=line, label=label)
+
+    else:
+        return None, None
+
+    # turn on the legend if a label is given or legend=True
     if label and legend:
         ax.legend()
 
@@ -175,16 +200,3 @@ def plot(xdata, ydata, marker=None, line="-", color=None, label=None,       # li
         plt.show()
 
     return fig, ax
-
-"""
-x = fun.V("x")
-f = fun.Exp(fun.Prod(complex(0, 1), x))
-# print(f.calc(np.pi/2))
-bild, achse = rangeplot(f, 0, 100, steps=10, title="Mein Plot")
-achs2 = bild.add_subplot()
-achs2.plot([0, 0.5, 0.8], [1, 3, 4])
-bild.savefig("a.png")
-plt.show()
-print(type(bild))
-"""
-# plt.grid(True)
