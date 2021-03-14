@@ -11,6 +11,8 @@ Praktimatika needs other python libraries for some features. Install them with p
 
 ### Optional (but recommended) Dependencies
 - pandas:           copying to clipboard and importing xlsx, ods ...
+  - openpyxl:       xlsx
+  -  
 - scipy:            curve fitting
 
 ## Usage
