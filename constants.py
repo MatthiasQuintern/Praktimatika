@@ -1,8 +1,6 @@
-import numpy as np
-import functions as fun
 
-# Todo: eps0, u0, c, h, h_, ...
-from tools import tool, latex
+# Todo: pi, h_,
+from tools import latex
 
 
 class Constant:
@@ -86,9 +84,13 @@ e = Constant("elemtary charge",
              unit="C",
              source="https://physics.nist.gov/cgi-bin/cuu/Value?e")
 
+
 #
 # UNIVERSAL
 #
+pi = Constant("pi",
+             3.1415926535897932384626433)
+
 h = Constant("Planck constant",
              6.62607015e-34,
              unit="Js",
@@ -119,6 +121,7 @@ const_d = {
     "ep_0": ep_0,
     "e": e,
     # UNIVERSAL
+    "pi": pi,
     "h": h,
     "h_eV": h_eV,
     "c_0": c_0,
