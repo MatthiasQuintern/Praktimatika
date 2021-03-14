@@ -11,7 +11,7 @@ from tui import tui_widgets as twid
 #
 class SaveVec(twid.BaseForm):
     """
-    Menu to save vectors. BEFORE it is called, the "vector" attribute must be set to the vector
+    Menu to save vectors. BEFORE it is called, the "array" attribute must be set to the array
     """
     DEFAULT_LINES = 10
     DEFAULT_COLUMNS = 80
@@ -43,7 +43,7 @@ class SaveVec(twid.BaseForm):
             ready = False
         # save and quit
         if ready:
-            self.status.value = self.parentApp.ses.add_vec(self.i_vecname.value, np.array(self.vector, dtype=float))
+            self.status.value = self.parentApp.ses.add_arr(self.i_vecname.value, np.array(self.vector, dtype=float))
             self.parentApp.switchFormPrevious()
         self.status.update()
 
@@ -59,14 +59,14 @@ class WeightedMedian(twid.BaseForm):
 
     def create(self):
         # input vectors
-        self.vector = self.add(twid.TVecSelect, rely=1, relx=3, use_two_lines=False, begin_entry_at=30, name="Values (vector):")
-        self.unc_vector = self.add(twid.TVecSelect, rely=2, relx=3, use_two_lines=False, begin_entry_at=30, name="Uncertainties (vector):")
+        self.vector = self.add(twid.TArrSelect, rely=1, relx=3, use_two_lines=False, begin_entry_at=30, name="Values (array):")
+        self.unc_vector = self.add(twid.TArrSelect, rely=2, relx=3, use_two_lines=False, begin_entry_at=30, name="Uncertainties (array):")
         self.b_calc = self.add(nps.ButtonPress, rely=3, relx=1, name="Calculate Weighted Median", when_pressed_function=self.calc)
         self.b_back = self.add(nps.ButtonPress, rely=4, relx=1, name="Go Back", when_pressed_function=self.parentApp.switchFormPrevious)
         # result
-        self.mw = self.add(twid.SingleVecDisplay, rely=6, relx=3, name="Weighted Median:", begin_entry_at=30)
-        self.u_int = self.add(twid.SingleVecDisplay, rely=7, relx=3, name="Internal Uncertainty:", begin_entry_at=30)
-        self.u_ext = self.add(twid.SingleVecDisplay, rely=8, relx=3, name="External Uncertainty:", begin_entry_at=30)
+        self.mw = self.add(twid.SingleArrDisplay, rely=6, relx=3, name="Weighted Median:", begin_entry_at=30)
+        self.u_int = self.add(twid.SingleArrDisplay, rely=7, relx=3, name="Internal Uncertainty:", begin_entry_at=30)
+        self.u_ext = self.add(twid.SingleArrDisplay, rely=8, relx=3, name="External Uncertainty:", begin_entry_at=30)
 
         # status
         self.status = self.add(nps.FixedText, rely=self.max_y - 4, relx=3, editable=False, value="You can use 'Tab' key for autocomplete Vector names.")
@@ -74,23 +74,23 @@ class WeightedMedian(twid.BaseForm):
 
     def calc(self):
         ready = True
-        vec = self.vector.get_vec()
+        vec = self.vector.get_arr()
         if vec is None:
-            self.status.value = "Invalid value vector."
+            self.status.value = "Invalid value array."
             ready = False
-        uvec = self.vector.get_vec()
+        uvec = self.vector.get_arr()
         if uvec is None:
-            self.status.value = "Invalid uncertainty vector."
+            self.status.value = "Invalid uncertainty array."
             ready = False
 
         if ready:
             if not np.shape(vec) == np.shape(uvec):
                 self.status.value = "Vectors do not have the same length."
             else:
-                result = median.weighted_median(self.parentApp.ses.vecs[self.vector.value], self.parentApp.ses.vecs[self.unc_vector.value])
-                self.mw.value, self.mw.vector = str(result[0]), result[0]
-                self.u_int.value, self.u_int.vector = str(result[1]), result[1]
-                self.u_ext.value, self.u_ext.vector = str(result[2]), result[2]
+                result = median.weighted_median(self.parentApp.ses.arrs[self.vector.value], self.parentApp.ses.arrs[self.unc_vector.value])
+                self.mw.value, self.mw.array = str(result[0]), result[0]
+                self.u_int.value, self.u_int.array = str(result[1]), result[1]
+                self.u_ext.value, self.u_ext.array = str(result[2]), result[2]
                 self.mw.update()
                 self.u_int.update()
                 self.u_ext.update()

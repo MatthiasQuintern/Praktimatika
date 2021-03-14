@@ -58,22 +58,22 @@ class TitleAction(nps.MultiLineAction):
 
 
 #
-# VECTOR WIDGETS
+# Array WIDGETS
 #
-class VecSelect(nps.Autocomplete):
-    """Widget to select vectors. It supports: Arrays like [.4, 2], Names from sessions.vecs, np.ndarray Slicing"""
+class ArrSelect(nps.Autocomplete):
+    """Widget to select Arrays. It supports: Arrays like [.4, 2], Names from sessions.arrs, np.ndarray Slicing"""
     def __init__(self, *args, **keywords):
-        super(VecSelect, self).__init__(*args, **keywords)
+        super(ArrSelect, self).__init__(*args, **keywords)
         self.editable = True
 
     def auto_complete(self, inpt):
         # self.value = "Hier könnte ihre Werbung stehen"
 
         for i in range(1):
-            # initial vector list
-            veclist = self.parent.parentApp.ses.get_dict("Vectors", only_name=True)
+            # initial array list
+            arrlist = self.parent.parentApp.ses.get_dict("Arrays", only_name=True)
             # remove entries which do not start with self.value
-            possibilities = list(filter(lambda vec: vec.startswith(self.value), veclist))
+            possibilities = list(filter(lambda arr: arr.startswith(self.value), arrlist))
             if len(possibilities) is 0:
                 # can't complete
                 curses.beep()  # play "alarm" sound
@@ -91,27 +91,27 @@ class VecSelect(nps.Autocomplete):
         # set cursor to the end of the word
         self.cursor_position = len(self.value)
 
-    def get_vec(self):
-        """Returns the vector from the Input via the tools.tool. str_to_processed_array method"""
-        valid, vector = tool.str_to_processed_arr(self.value, self.parent.parentApp.ses.vecs)
+    def get_arr(self):
+        """Returns the array from the Input via the tools.tool. str_to_processed_array method"""
+        valid, array = tool.str_to_processed_arr(self.value, self.parent.parentApp.ses.arrs)
         if valid:
-            return vector
+            return array
         return None
 
 
-class TVecSelect(nps.TitleText):
-    _entry_type = VecSelect
+class TArrSelect(nps.TitleText):
+    _entry_type = ArrSelect
 
-    def get_vec(self):
-        """Returns the vector from the Input via the tools.tool. str_to_processed_array method"""
-        valid, vector = tool.str_to_processed_arr(self.value, self.parent.parentApp.ses.vecs)
+    def get_arr(self):
+        """Returns the array from the Input via the tools.tool. str_to_processed_array method"""
+        valid, array = tool.str_to_processed_arr(self.value, self.parent.parentApp.ses.arrs)
         if valid:
-            return vector
+            return array
         return None
 
 
-class VecDisplay(nps.MultiLineAction):
-    """Display Vectors and call the save menu when a vector is clicked"""
+class ArrDisplay(nps.MultiLineAction):
+    """Display Arrays and call the save menu when a array is clicked"""
 
     def __init__(self, *args, **keywords):
         super().__init__(*args, **keywords)
@@ -122,9 +122,9 @@ class VecDisplay(nps.MultiLineAction):
 
     def actionHighlighted(self, act_on_this, key_press):
         if checks.is_number_array(act_on_this):
-            # calls the SaveVector Menu for the selected Vector
-            self.ppa.add_vec.vector = act_on_this
-            self.ppa.switchForm("save_vec")
+            # calls the SaveArray Menu for the selected Array
+            self.ppa.add_arr.array = act_on_this
+            self.ppa.switchForm("save_arr")
         return
 
     def set_up_handlers(self):
@@ -145,19 +145,19 @@ class VecDisplay(nps.MultiLineAction):
         })
 
 
-class BVecDisplay(nps.BoxTitle):
-    _contained_widget = VecDisplay
+class BArrDisplay(nps.BoxTitle):
+    _contained_widget = ArrDisplay
 
 
-class SingleVecDisplay(nps.TitleFixedText):
-    """Display Vector and call the save menu when it is clicked
-    Save the actual vector in the 'vector' attribute"""
+class SingleArrDisplay(nps.TitleFixedText):
+    """Display Array and call the save menu when it is clicked
+    Save the actual array in the 'array' attribute"""
     def __init__(self, screen, begin_entry_at=16, field_width=None,
                  value=None, use_two_lines=False, hidden=False, labelColor='STANDOUT', allow_override_begin_entry_at=True, *args, **keywords):
 
-        super(SingleVecDisplay, self).__init__(screen, begin_entry_at=begin_entry_at, field_width=field_width, value=value, use_two_lines=use_two_lines, hidden=hidden, labelColor=labelColor,
+        super(SingleArrDisplay, self).__init__(screen, begin_entry_at=begin_entry_at, field_width=field_width, value=value, use_two_lines=use_two_lines, hidden=hidden, labelColor=labelColor,
                                                allow_override_begin_entry_at=allow_override_begin_entry_at, **keywords)
-        self.vector = None
+        self.array = None
         self.ppa = self.parent.parentApp
 
     def set_up_handlers(self):
@@ -168,10 +168,10 @@ class SingleVecDisplay(nps.TitleFixedText):
         }
 
     def call_save_menu(self, key):
-        if checks.is_number_array(self.vector):
-            # calls the SaveVector Menu for the selected Vector
-            self.ppa.save_vec.vector = self.vector
-            self.ppa.switchForm("save_vec")
+        if checks.is_number_array(self.array):
+            # calls the SaveArray Menu for the selected Array
+            self.ppa.save_arr.array = self.array
+            self.ppa.switchForm("save_arr")
 
 
 #
@@ -302,7 +302,8 @@ class UserFuncAction(nps.MultiLineAction):
             "Curve Fit":            (self.ppa.switchForm, "curve_fit"),
             "Output Latex":         (self.ppa.output, sy.latex(self.ppa.function[1])),
             "Output Function":      (self.ppa.output, str(self.ppa.function[1])),
-            "Delete":               (self.delete_vec, None),
+            "Edit":                 (self.ppa.switchForm, "edit_fun"),
+            "Delete":               (self.delete_arr, None),
             "Go Back":              (self.ppa.switchForm, "home")
         }
         self.values = list(self.actions.keys())
@@ -329,9 +330,9 @@ class UserFuncAction(nps.MultiLineAction):
     def output_cev(self):
         self.ppa.output(str(self.ppa.function[1]))
 
-    def delete_vec(self, none):
-        if nps.notify_yes_no("Do you really want to delete the vector?"):
-            self.ppa.ses.vecs.pop(self.ppa.function[0])
+    def delete_arr(self, none):
+        if nps.notify_yes_no("Do you really want to delete the array?"):
+            self.ppa.ses.arrs.pop(self.ppa.function[0])
 
 
 #

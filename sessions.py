@@ -17,7 +17,7 @@ def load_session(path):
 
 class PKTSession:
     """
-    Session stores all functions, variables, vectors, constants and figures in dictionaries.
+    Session stores all functions, variables, arrays, constants and figures in dictionaries.
     The methods to access/manipulate the dicts often return a string with error/succes messages, so that an app can show the messages
 
     """
@@ -31,13 +31,15 @@ class PKTSession:
             const_d = {}
         self.consts = const_d
 
-        self.vecs = {}
+        self.arrs = {}
         self.figs = {}
         self._dicts = {
             "Functions":    self.funs,
             "Variables":    self.vars,
             "Constants":    self.consts,
-            "Arrays":       self.vecs,
+            "Arrays":       self.arrs,
+            # Legacy
+            "Vectors":      self.arrs,
             "Plots":        self.figs,
         }
 
@@ -119,38 +121,38 @@ class PKTSession:
         self.vars.update({varname: sy.symbols(varname)})
         return f"Saved Variable {varname}"
 
-    def add_vec(self, vecname: str, array):
-        # better use add_vecs for string declarations
-        self.vecs.update({vecname: array})
-        return f"Saved Vector {vecname}"
+    def add_arr(self, arrname: str, array):
+        # better use add_arrs for string declarations
+        self.arrs.update({arrname: array})
+        return f"Saved Array {arrname}"
 
-    def add_vecs(self, vecs: iter, replace=True, dtype=float):
+    def add_arrs(self, arrs: iter, replace=True, dtype=float):
         """
         :param dtype:       data type
         :param replace:     boolean wether to replace functions with conflicting names
-        :param vecs:        iterable with strings in this form: "v=[4, 2, 2.5]"
+        :param arrs:        iterable with strings in this form: "v=[4, 2, 2.5]"
         :return:            str, output for status bar
         """
         output = ""
-        for vector in vecs:
-            veclist = vector.replace(" ", "").split("=")
+        for array in arrs:
+            arrlist = array.replace(" ", "").split("=")
             try:
-                valid, array = tool.str_to_processed_arr(veclist[1], vecdict=self.vecs, dtype=dtype)
+                valid, array = tool.str_to_processed_arr(arrlist[1], arrdict=self.arrs, dtype=dtype)
                 if valid:
                     # only add if "replace=True" or not already existing
-                    if replace or veclist[0] not in self.vecs:
-                        self.vecs.update({veclist[0]: array})
-                        output += f"added {veclist[0]},"
+                    if replace or arrlist[0] not in self.arrs:
+                        self.arrs.update({arrlist[0]: array})
+                        output += f"added {arrlist[0]},"
                     else:
-                        output += f"NOT added: {veclist[0]} (already existing),"
+                        output += f"NOT added: {arrlist[0]} (already existing),"
                 else:
-                    output += f"NOT added: {vector.split('=')[0]} (invalid vector),"
+                    output += f"NOT added: {array.split('=')[0]} (invalid array),"
             except IndexError:
-                output += f"NOT added: {vector} (invalid expression),"
+                output += f"NOT added: {array} (invalid expression),"
         return output.strip(",")
 
     def add_table(self, path, sep=","):
-        self.vecs.update(sheet_read.get_vectors(sheet_read.read_table(path, sep=sep)))
+        self.arrs.update(sheet_read.get_arrays(sheet_read.read_table(path, sep=sep)))
 
     #
     # PLOT STUFF
@@ -242,19 +244,20 @@ class PKTSession:
             for axes in self.figs[figname]["axes"]:
                 ax_d = self.figs[figname]["axes"][axes]
                 for pl in ax_d["plots"]:
-                    xvalid, xdata = tool.str_to_processed_arr(ax_d["plots"][pl]["xdata"], vecdict=self.vecs)
+                    xvalid, xdata = tool.str_to_processed_arr(ax_d["plots"][pl]["xdata"], arrdict=self.arrs)
                     if not xvalid:
                         raise TypeError(f"Invalid xdata: '{ax_d['plots'][pl]['xdata']}'")
-                    yvalid, ydata = tool.str_to_processed_arr(ax_d["plots"][pl]["ydata"], vecdict=self.vecs)
+                    yvalid, ydata = tool.str_to_processed_arr(ax_d["plots"][pl]["ydata"], arrdict=self.arrs)
                     if not yvalid:
                         raise TypeError(f"Invalid ydata: '{ax_d['plots'][pl]['ydata']}'")
 
                     fig, ax = plot.plot(xdata, ydata, marker=ax_d["plots"][pl]["marker"],
                                         line=ax_d["plots"][pl]["line"], color=ax_d["plots"][pl]["color"], label=ax_d["plots"][pl]["label"],       # line options
-                                        fig=fig, ax=ax, dpi=self.figs[figname]["dpi"], figsize=figsize,                                        # figure/axes options todo:tight/constrained_layout
-                                        title=ax_d["title"], xlabel=ax_d["xlabel"], ylabel=ax_d["ylabel"], legend=ax_d["legend"], fontsize=ax_d["fontsize"],  # labels....
+                                        fig=fig, dpi=self.figs[figname]["dpi"], figsize=figsize, fontsize=ax_d["fontsize"],
+                                        constrained_layout=self.figs[figname]["constrained_layout"], tight_layout=self.figs[figname]["tight_layout"],
+                                        ax=ax, title=ax_d["title"], xlabel=ax_d["xlabel"], ylabel=ax_d["ylabel"], legend=ax_d["legend"],   # axes options
+                                        xlim=ax_d["xlim"], ylim=ax_d["ylim"], xscale=ax_d["xscale"], yscale=ax_d["yscale"],
                                         grid=ax_d["grid"], gline=ax_d["gline"], gcolor=ax_d["gcolor"],
-                                        xlim=ax_d["xlim"], ylim=ax_d["ylim"], xscale=ax_d["xscale"], yscale=ax_d["yscale"],                                  # axes options
                                         show=False)
         except TypeError as ex:
             return ex
@@ -330,4 +333,4 @@ class PKTSession:
             pk.dump(self, file)
 
     def __repr__(self):
-        return f"funs:{self.funs} vars:{self.vars} vecs:{self.vecs} plots:{self.figs}"
+        return f"funs:{self.funs} vars:{self.vars} arrs:{self.arrs} plots:{self.figs}"

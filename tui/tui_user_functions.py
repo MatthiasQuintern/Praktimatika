@@ -57,18 +57,21 @@ class UserFuncCalc2(twid.BaseForm):
         self.status.important = True  # makes it bold and green
 
     def create_val_input(self, y, col):
+        """
+        create the value input widgets and return the position of the last widget
+        """
         varlist = cl.get_needed_values(self.parentApp.function[1])
 
         for i in range(len(varlist)):
             value = ""
-            # check if the varname is a constant or already defined vector
+            # check if the varname is a constant or already defined array
             if varlist[i] in self.parentApp.ses.consts.keys():
                 value = self.parentApp.ses.consts[varlist[i]]
-            elif varlist[i] in self.parentApp.ses.vecs.keys():
-                value = self.parentApp.ses.vecs[varlist[i]]
+            elif varlist[i] in self.parentApp.ses.arrs.keys():
+                value = self.parentApp.ses.arrs[varlist[i]]
             # value must be string, otherwise there can be unfixable TypeError with 1-element numpy arrays
-            self.vars.update({varlist[i]: self.add(twid.TVecSelect, rely=y + i, relx=col, name=f"{varlist[i]}:", value=str(value))})
-        return len(self.vars)
+            self.vars.update({varlist[i]: self.add(twid.TArrSelect, rely=y + i, relx=col, name=f"{varlist[i]}:", value=str(value))})
+        return len(self.vars) + y
 
     def _clear_all_widgets(self, ):
         self._widgets__ = []
@@ -93,12 +96,12 @@ class UserFuncCalc2(twid.BaseForm):
         self.editw = 0
 
     def calc(self):
-        d = {}  # dict with varname: vector pairs
+        d = {}  # dict with varname: array pairs
         for name, wid in self.vars.items():
             """ # IF THE CHECKS DON'T PASS, THE INPUT VALUE IS STILL INVALID/NONE!
             value = wid.value
-            if str(value) in self.parentApp.ses.vecs:
-                value = self.parentApp.ses.vecs[str(value)]
+            if str(value) in self.parentApp.ses.arrs:
+                value = self.parentApp.ses.arrs[str(value)]
             # check if value is an array with numbers
             elif checks.is_number(value):
                 value = float(value)
@@ -108,8 +111,8 @@ class UserFuncCalc2(twid.BaseForm):
             else:
                 value = tool.str_to_arr(str(value))[1]
                 # nps.notify_confirm(f"Can not convert {value} to a number or array")"""
-            valid, value = wid.get_vec()
-            if valid:
+            value = wid.get_arr()
+            if value is not None:
                 d.update({name: value})
             else:
                 self.status.value = f"Invalid input for variable '{name}'"
@@ -122,9 +125,9 @@ class UserFuncCalc2(twid.BaseForm):
 
     def save_res(self):
         if (checks.is_number(self.result_val) or checks.is_number_array(self.result_val)) and self.res_name.value != "":
-            self.parentApp.ses.add_vec(self.res_name.value, np.array(self.result_val))
+            self.parentApp.ses.add_arr(self.res_name.value, np.array(self.result_val))
         else:
-            nps.notify_confirm("Could not save vector!")
+            nps.notify_confirm("Could not save array!")
 
 
 class ErrorPropagation(twid.BaseForm):
@@ -211,8 +214,8 @@ class CurveFit(twid.BaseForm):
         self.fun = self.add(nps.FixedText, editable=False, rely=2, relx=3, value="Function")
         self.line0 = self.add(nps.FixedText, rely=y1, relx=col1, editable=False, value="\u2501" * 250)
         # DATA
-        self.xdata = self.add(twid.TVecSelect, rely=y1+1, relx=col1, name="x-data:")
-        self.ydata = self.add(twid.TVecSelect, rely=y1 + 2, relx=col1, name="y-data:")
+        self.xdata = self.add(twid.TArrSelect, rely=y1 + 1, relx=col1, name="x-data:")
+        self.ydata = self.add(twid.TArrSelect, rely=y1 + 2, relx=col1, name="y-data:")
         self.t_desc1 = self.add(nps.FixedText, editable=False, rely=y1 + 4, relx=3, value="Select the variable which is NOT a parameter and change the settings if needed." + "\u2501" * 200)
 
         # PARAMETER SETTINGS
@@ -255,16 +258,16 @@ class CurveFit(twid.BaseForm):
         self.varoptions = {}
         for i in range(len(varlist)):
             self.varoptions.update({varlist[i]: self.add(twid.Input, rely=y+1+i, relx=col2, name=varlist[i], begin_entry_at=8, value="-inf, inf, 0", max_height=len(varlist)+1)})
-        return len(varlist)
+        return len(varlist) + 1
 
     def create_res_display(self, y, col2):
         self.res_params = []
         self.res_uparams = []
         for i in range(len(self.varselect.values)):
             # create display for params
-            self.res_params.append(self.add(twid.SingleVecDisplay, rely=y+1+i, relx=3, field_width=col2-5, name=self.varselect.values[i], value="---"))
+            self.res_params.append(self.add(twid.SingleArrDisplay, rely=y + 1 + i, relx=3, field_width=col2 - 5, name=self.varselect.values[i], value="---"))
             # same for u params
-            self.res_uparams.append(self.add(twid.SingleVecDisplay, rely=y + 1 + i, relx=col2, name="u"+self.varselect.values[i], value="---"))
+            self.res_uparams.append(self.add(twid.SingleArrDisplay, rely=y + 1 + i, relx=col2, name="u" + self.varselect.values[i], value="---"))
         return len(self.res_params)
 
     def pre_edit_loop(self):
@@ -282,8 +285,8 @@ class CurveFit(twid.BaseForm):
         self.editw = 0
 
     def fit(self):
-        xdata = self.xdata.get_vec()
-        ydata = self.xdata.get_vec()
+        xdata = self.xdata.get_arr()
+        ydata = self.xdata.get_arr()
         if xdata is None:
             self.status.value = "Invalid x-data"
         elif ydata is None:
@@ -302,9 +305,9 @@ class CurveFit(twid.BaseForm):
             self.t_result.value = "Result: " + str(self.res_fun)
             self.t_result.update()
             for i in range(len(params)):
-                # store the parameter values in the SingleVecDisplay.vector
-                self.res_params[i].vector = params[i]
-                self.res_uparams[i].vector = uparams[i]
+                # store the parameter values in the SingleArrDisplay.array
+                self.res_params[i].array = params[i]
+                self.res_uparams[i].array = uparams[i]
                 # display the values
                 self.res_params[i].value = str(params[i])
                 self.res_uparams[i].value = str(uparams[i])
@@ -314,7 +317,7 @@ class CurveFit(twid.BaseForm):
 
     def save_fun(self):
         if self.res_fun is not None and self.res_fun_name.value != "":
-            self.parentApp.ses.add_funs([self.res_fun])
+            self.parentApp.ses.add_funs([f"{self.res_fun_name.value}={self.res_fun}"])
         else:
-            nps.notify_confirm("Could not save vector!")
+            nps.notify_confirm("Could not save function: Either 'name' or function is None.")
 

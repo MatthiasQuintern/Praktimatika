@@ -5,6 +5,7 @@ from tools import checks
 from tui import tui_widgets as twid
 from curses import ascii
 
+
 #
 # Base Form for the plot menus
 #
@@ -20,7 +21,6 @@ class PltMenu(twid.BaseForm):
         self.status = self.add(nps.FixedText, rely=self.lines - 3, relx=col1, editable=False, value="Plot Menu")
         self.status.important = True  # makes it bold and green
 
-        # TODO: handlers not working
         self.add_handlers({
             "^K":             self.to_figures,
             ord("f"):         self.to_figures,
@@ -40,6 +40,8 @@ class PltMenu(twid.BaseForm):
         self.set_editing(self.list)
 
         self.display()
+
+
 #
 # PLOT MAIN MENU
 #
@@ -299,6 +301,7 @@ class AxesMenu(PltMenu):
 
 
 class PlotMenu(PltMenu):
+    # TODO: plot functions, errorbars, hlines, vlines
     def create(self):
         super(PlotMenu, self).create()
         col1 = PltMenu.col1
@@ -320,8 +323,8 @@ class PlotMenu(PltMenu):
 
         self.line1 = self.add(nps.FixedText, rely=y1, relx=col1, editable=False, value="\u2501" * 200)
         # DATA
-        self.xdata = self.add(twid.TVecSelect, rely=y1 + 1, relx=col1, name="x-Data (array)", use_two_lines=False, labelColor='STANDOUT')
-        self.ydata = self.add(twid.TVecSelect, rely=y1 + 2, relx=col1, name="y-Data (array)", use_two_lines=False, labelColor='STANDOUT')
+        self.xdata = self.add(twid.TArrSelect, rely=y1 + 1, relx=col1, name="x-Data (array)", use_two_lines=False, labelColor='STANDOUT')
+        self.ydata = self.add(twid.TArrSelect, rely=y1 + 2, relx=col1, name="y-Data (array)", use_two_lines=False, labelColor='STANDOUT')
 
         self.line3 = self.add(nps.FixedText, rely=y2, relx=col1, editable=False, value="\u2501" * 200)
         # SETTINGS

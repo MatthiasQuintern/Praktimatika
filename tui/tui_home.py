@@ -12,7 +12,7 @@ class MultiLineAction(nps.MultiLineAction):
         self.ppa = self.parent.parentApp
 
     def actionHighlighted(self, act_on_this, key_press):
-        # set parentApp.function/vector/constant/variable to act_on_this
+        # set parentApp.function/array/constant/variable to act_on_this
         # values=["Functions", "Variables", "Vectors", "Constants"]
         # nps.notify_confirm(f"{act_on_this},  {key_press}")
         # act_on_this is a name=value string
@@ -24,7 +24,7 @@ class MultiLineAction(nps.MultiLineAction):
         elif self.parent.main_select.value == [1]:    # Variable
             self.ppa.variable = (name, self.ppa.ses.vals[name])
         elif self.parent.main_select.value == [2]:    # Vector
-            self.ppa.vector = (name, self.ppa.ses.vecs[name])
+            self.ppa.array = (name, self.ppa.ses.arrs[name])
         elif self.parent.main_select.value == [3]:    # Constant
             self.ppa.constant = (name, self.ppa.ses.consts[name])
         return
@@ -54,7 +54,9 @@ class MultiLineAction(nps.MultiLineAction):
 
 class BoxMultiLineAction(nps.BoxTitle):
     _contained_widget = MultiLineAction
-
+    def __init__(self, *args, **keywords):
+        self.how_exited = False
+        super(BoxMultiLineAction, self).__init__(*args, **keywords)
 
 class MainSelect(nps.TitleSelectOne):
     def when_value_edited(self):
@@ -170,7 +172,6 @@ class HomeMenu(nps.FormBaseNewWithMenus):
             ord("p"):       self.call_plot_menu,
         }
 
-
     def pre_edit_loop(self):
         # main box
         self.change_main()
@@ -216,7 +217,7 @@ class HomeMenu(nps.FormBaseNewWithMenus):
         self.parentApp.switchForm("add_fun")
 
     def call_add_vec(self, *args):
-        self.parentApp.switchForm("add_vec")
+        self.parentApp.switchForm("add_arr")
 
     def call_weighted_median(self, *args):
         self.parentApp.switchForm("weighted_median")

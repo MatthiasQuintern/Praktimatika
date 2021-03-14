@@ -22,7 +22,7 @@ class ImportMenu(nps.FormBaseNew):
         self.b_smt_im = self.add(nps.ButtonPress, rely=6, relx=1, name="Smart Import", when_pressed_function=self.smart_import)
         # self.b_save_as = self.add(nps.ButtonPress, rely=4, relx=1, name="Save as", when_pressed_function=exit_app)
         self.b_back = self.add(nps.ButtonPress, rely=7, relx=1, name="Go Back", when_pressed_function=self.parentApp.switchFormPrevious)
-        self.status = self.add(nps.FixedText, rely=9, relx=3, value="'Smart Import' looks for strings with values in one column and imports them as vectors")
+        self.status = self.add(nps.FixedText, rely=9, relx=3, value="'Smart Import' looks for strings with values in one column and imports them as arrays")
         self.status.important = True  # makes it bold and green
 
     def man_import(self):
@@ -35,7 +35,7 @@ class ImportMenu(nps.FormBaseNew):
             self.status.value = result[1]
         # if path is a readable file
         else:
-            # update the sessions vectors
-            self.parentApp.ses.vecs.update(sr.get_vectors(sr.read_table(self.path.value)))
+            # update the sessions arrays
+            self.parentApp.ses.arrs.update(sr.get_arrays(sr.read_table(self.path.value)))
             self.status.value = f"Smart-Imported Vectors from {self.path.value}"
 

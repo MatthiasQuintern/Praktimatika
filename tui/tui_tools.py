@@ -27,8 +27,8 @@ class LatexTable(twid.BaseForm):
         vectors = {}
         vecnames = re.split("&|pm", self.format.value.replace(" ", ""))
         for vecname in vecnames:
-            if vecname in self.parentApp.ses.vecs:
-                vectors.update({vecname: self.parentApp.ses.vecs[vecname]})
+            if vecname in self.parentApp.ses.arrs:
+                vectors.update({vecname: self.parentApp.ses.arrs[vecname]})
             else:
                 ready = False
                 self.status.value = f"Invalid Vector Name: {vecname}"
