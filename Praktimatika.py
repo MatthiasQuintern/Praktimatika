@@ -113,7 +113,7 @@ class Praktimatika(nps.NPSAppManaged):
         # stores a selected ... to be accessible for all forms: (name, value)
         self.function = ("", None)
         self.variable = ("", None)
-        self.vector = ("", None)
+        self.array = ("", None)
         self.constant = ("", None)
 
         # temp:
@@ -126,7 +126,7 @@ class Praktimatika(nps.NPSAppManaged):
         # APP MENUS
         self.f_settings = self.addForm("settings", tui_home.Settings, name="Praktimatika Settings")
         self.save = self.addForm("save", SaveMenu, name="Save Praktimatika PKTSession")
-        self.impor = self.addForm("import", tui_import.ImportMenu, name="Import vectors from a spreadsheet")
+        self.impor = self.addForm("import", tui_import.ImportMenu, name="Import Arrays from a spreadsheet")
 
         # FUNCTION MENUS
         self.func = self.addForm("m_fun", tui_user_functions.UserFuncMenu, name="Function Menu")
@@ -143,8 +143,9 @@ class Praktimatika(nps.NPSAppManaged):
         self.pl_pl = self.addForm("pl_pl", tui_plot.PlotMenu, name="Plot Menu - Data")
         # Add Menus
         self.add_fun = self.addForm("add_fun", tui_add.AddFun, name="Add Functions")
-        self.add_vec = self.addForm("add_vec", tui_add.AddVec, name="Add Vectors & Values")
-        self.save_vec = self.addForm("save_vec", tui_functions.SaveVec, name="Save Vector")
+        self.edit_fun = self.addForm("edit_fun", tui_add.EditFunc, name="Edit Function")
+        self.add_arr = self.addForm("add_arr", tui_add.AddArr, name="Add Arrays & Values")
+        self.save_arr = self.addForm("save_arr", tui_functions.SaveVec, name="Save Array")
         # TOOLS
         self.latex = self.addForm("latex_table", tui_tools.LatexTable, name="Create Latex Table")
 
@@ -187,6 +188,7 @@ class Praktimatika(nps.NPSAppManaged):
         form = self.getForm(self.ACTIVE_FORM_NAME)
         if hasattr(form, "status"):
             form.status.value = status
+            form.status.update()
 
     def load_settings(self):
         try:
