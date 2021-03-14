@@ -8,8 +8,8 @@ def latex_table(formstring, vectors: dict, first_line="", box=True, decimal_sep=
     Converts Vectors to a latex table
     :param decimal_sep:
     :param significant_digits:
-    :param formstring:              form string: contains format with vector names, eg "v & w pm uw"
-    :param vectors:                 dictionaries, contains vectorname: vector
+    :param formstring:              form string: contains format with array names, eg "v & w pm uw"
+    :param vectors:                 dictionaries, contains vectorname: array
     :param first_line:              first line of the table (eg to include units)
     :param box:
     :return:
@@ -23,17 +23,17 @@ def latex_table(formstring, vectors: dict, first_line="", box=True, decimal_sep=
 
     form = formstring.replace(" ", "").split("&")
     latex_form = ""  # the |l|c|c| thing
-    # get one line for each vector value (vector length), assumed that all vectors have the same length
+    # get one line for each array value (array length), assumed that all vectors have the same length
     lines = ["$" for i in range(tool.get_max_vec_length(list(vectors.values())))]
 
     for j in range(len(form)):
         latex_form += f"{vline}c"
         # get the processed arrays
         if re.fullmatch(".+pm.+", form[j]):
-            v = tool.str_to_processed_arr(form[j].split("pm")[0], vecdict=vectors)[1]
-            uv = tool.str_to_processed_arr(form[j].split("pm")[1], vecdict=vectors)[1]
+            v = tool.str_to_processed_arr(form[j].split("pm")[0], arrdict=vectors)[1]
+            uv = tool.str_to_processed_arr(form[j].split("pm")[1], arrdict=vectors)[1]
         else:
-            v = tool.str_to_processed_arr(form[j], vecdict=vectors)[1]
+            v = tool.str_to_processed_arr(form[j], arrdict=vectors)[1]
             uv = None
         for i in range(len(lines)):
             # if val pm uncert pair

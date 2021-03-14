@@ -73,7 +73,6 @@ def is_valid_fun(function: str):
 
 
 def is_valid_subfun(f: str):
-    # Todo: return useful info about what is wrong
     # opening / closung paranthesis count must be equal
     print(f)
     f = f.replace(" ", "")

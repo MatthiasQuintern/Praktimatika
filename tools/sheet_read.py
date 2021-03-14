@@ -2,8 +2,6 @@ import numpy as np
 import re
 
 
-# TODO: convert \ to /
-
 def read_csv(path, sep=','):
     """
     :param path:    path to a csv-like file
@@ -43,7 +41,12 @@ def read_table(path, sep=","):
     # return read_excel(path, keep_default_na=False).values.tolist()  # if keep_default_na is true, empty cells are 'nan' and not None
 
 
+# legacy
 def get_vectors(lis):
+    return get_arrays(list)
+
+
+def get_arrays(lis):
     """
     :param lis:    list with lines, each line is list with cells
     :returns:       dictionary containing numpy arrays with string as key
@@ -52,11 +55,11 @@ def get_vectors(lis):
     vectors = {}
     for i in range(len(lis)):
         for j in range(len(lis[i])):
-            # csv[i][j] is the name of the vector, if it can not be interpreted as a number it can be a valid vector name
+            # csv[i][j] is the name of the array, if it can not be interpreted as a number it can be a valid array name
             try:
                 float(lis[i][j])
             except ValueError:
-                if lis[i][j] != "":     # empty string is not a valid vector name
+                if lis[i][j] != "":     # empty string is not a valid array name
                     vec = []
                     done = False
                     k = i + 1

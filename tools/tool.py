@@ -3,37 +3,37 @@ from tools import checks
 import numpy as np
 
 
-def str_to_processed_arr(vecstring: str, vecdict=None, dtype=float):
+def str_to_processed_arr(arrstring: str, arrdict=None, dtype=float):
     """
     Gets a string and returns a float or numpy array. The string can contain numpy array slicing
     :param dtype:       data type of np array
-    :param vecstring:   name of the vector in vecdict or like this [1, 2.5, .9, 5][0:3:2]
-    :param vecdict:     dictionary, which should contain the vector name as key if vecstring is a name
+    :param arrstring:   name of the array in vecdict or like this [1, 2.5, .9, 5][0:3:2]
+    :param arrdict:     dictionary, which should contain the array name as key if vecstring is a name
     :return:            bool: success, float/np.ndarray
     """
-    vecstring = vecstring.replace(" ", "")
+    arrstring = arrstring.replace(" ", "")
     vec = None
     # check if its a number
-    match = re.search("^("+checks.NUMBER+"|(-?inf))", vecstring)
+    match = re.search("^(" + checks.NUMBER + "|(-?inf))", arrstring)
     if match:
         if checks.is_number(match.group()):
             vec = float(match.group())
     else:
         # get the array from string
-        match = re.search(r"^\["+checks.NUMBER+"(,"+checks.NUMBER+")*]", vecstring)
+        match = re.search(r"^\[" + checks.NUMBER +"(," + checks.NUMBER +")*]", arrstring)
         if match:
             valid, vec = str_to_arr(match.group(), dtype=dtype)
         # get the array from vecdict
-        elif isinstance(vecdict, dict):
-            match = re.search("^" + checks.NAME, vecstring)
+        elif isinstance(arrdict, dict):
+            match = re.search("^" + checks.NAME, arrstring)
             if match:
                 print(match, match.group())
-                if match.group() in vecdict:
-                    vec = vecdict[match.group()]
+                if match.group() in arrdict:
+                    vec = arrdict[match.group()]
 
     # check if there are any opertaions performed on vec recursively
     if vec is not None:
-        reststring = vecstring.replace(match.group(), "")
+        reststring = arrstring.replace(match.group(), "")
 
         # test for slice
         match = re.search(r"^\[.+]", reststring)
@@ -46,25 +46,25 @@ def str_to_processed_arr(vecstring: str, vecdict=None, dtype=float):
                     break
                 elif checks.is_int(slcs[i]):
                     slc[i] = int(slcs[i])
-            # slice the vector
+            # slice the array
             vec = vec[slc[0]:slc[1]:slc[2]]
             reststring = reststring.replace(match.group(), "")
         if len(reststring) > 0:
             # check for *+-/
             if reststring[0] == "*":
-                valid, restvec = str_to_processed_arr(reststring[1:], vecdict=vecdict, dtype=dtype)
+                valid, restvec = str_to_processed_arr(reststring[1:], arrdict=arrdict, dtype=dtype)
                 if valid:
                     vec *= restvec
             elif reststring[0] == "+":
-                valid, restvec = str_to_processed_arr(reststring[1:], vecdict=vecdict, dtype=dtype)
+                valid, restvec = str_to_processed_arr(reststring[1:], arrdict=arrdict, dtype=dtype)
                 if valid:
                     vec += restvec
             elif reststring[0] == "-":
-                valid, restvec = str_to_processed_arr(reststring[1:], vecdict=vecdict, dtype=dtype)
+                valid, restvec = str_to_processed_arr(reststring[1:], arrdict=arrdict, dtype=dtype)
                 if valid:
                     vec -= restvec
             elif reststring[0] == "/":
-                valid, restvec = str_to_processed_arr(reststring[1:], vecdict=vecdict, dtype=dtype)
+                valid, restvec = str_to_processed_arr(reststring[1:], arrdict=arrdict, dtype=dtype)
                 if valid:
                     vec /= restvec
         return True, vec
