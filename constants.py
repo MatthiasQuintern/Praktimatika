@@ -1,5 +1,3 @@
-
-# Todo: pi, h_,
 from tools import latex
 
 
