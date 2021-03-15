@@ -37,7 +37,7 @@ def plot(xdata=None, ydata=None, marker=None, line="-", color=None, label=None, 
          fig=None, dpi=300, figsize=None,                                               # figure/axes options
          tight_layout=True, constrained_layout=False,
          ax=None, xlim=None, ylim=None, xscale="linear", yscale="linear",               # axes options
-         title=None, xlabel=None, ylabel=None, legend=False, fontsize="13",             # labels options
+         title=None, xlabel=None, ylabel=None, legend=None, fontsize="13",             # labels options
          grid="major", gline="-", gcolor="#888",                                        # grid options
          show=False):
     """
@@ -194,7 +194,7 @@ def plot(xdata=None, ydata=None, marker=None, line="-", color=None, label=None, 
         return None, None
 
     # turn on the legend if a label is given or legend=True
-    if label and legend:
+    if (label and legend is None) or legend:
         ax.legend()
 
     if title:
