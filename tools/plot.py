@@ -13,17 +13,26 @@ def range_plot(f, xmin=0, xmax=1, steps=1000,  **keywords):
     :param keywords:    see 'tools.tool.plot' for all keyword options
     :return:            matplotlib figure, matplotlib axis
     """
+    try:
+        from sympy import Function
+        from tools import calc
+        if isinstance(f, Function) or isinstance(f, str):
+            val = calc.get_needed_values(f)
+            f = calc.get_py_fun(f, val, vectorize=True)
+    except ImportError:
+        pass
+    f = np.vectorize(f)
+
     dx = abs(xmax - xmin) / steps
     xdata = np.arange(xmin, xmax, dx)
-    ydata = np.empty([steps])
-    for i in range(0, steps, 1):
-        ydata[i] = f(xdata[i])
+
+    ydata = f(xdata)
     fig, ax = plot(xdata, ydata, **keywords)
     return fig, ax
 
 
 def plot(xdata=None, ydata=None, marker=None, line="-", color=None, label=None,                   # line options
-         xerr=None, yerr=None,
+         xerr=None, yerr=None, min=-1000, max=1000,
          # ecolor=None, elinewidth=None, capsize=None, barsabove=False, lolims=False, uplims=False, xlolims=False, xuplims=False, errorevery=1, capthick=None
          fig=None, dpi=300, figsize=None,                                               # figure/axes options
          tight_layout=True, constrained_layout=False,
@@ -32,12 +41,21 @@ def plot(xdata=None, ydata=None, marker=None, line="-", color=None, label=None, 
          grid="major", gline="-", gcolor="#888",                                        # grid options
          show=False):
     """
+        returns matplotlib figure and axis.
+        Methods used when ... data is given:
+        x and y:            -> plot
+        only x              -> vlines
+        only y              -> hlines
+        x, y and x/y error: -> errorbar
         data:
             :param xdata:
             :param ydata:
         errors
             :param xerr:    x-Errors, float or array-like, shape(N,) or shape(2, N)
             :param yerr:    y-Errors, float or array-like, shape(N,) or shape(2, N)
+        bars:
+            param min:      lower bound for the vertical/horizontal line
+            param max:      upper bound for the vertical/horizontal line
         line options
             :param label:   a label to use in the legend
             :param color:   b g r c m y k w
@@ -167,10 +185,10 @@ def plot(xdata=None, ydata=None, marker=None, line="-", color=None, label=None, 
             ax.plot(xdata, ydata, color=color, marker=marker, linestyle=line, label=label)
 
     elif xdata is not None:
-        ax.vlines(xdata, colors=color, linestyles=line, label=label)
+        ax.vlines(xdata, ymin=min, ymax=max, colors=color, linestyles=line, label=label)
 
     elif ydata is not None:
-        ax.hlines(ydata, colors=color, linestyles=line, label=label)
+        ax.hlines(ydata, xmin=min, xmax=max, colors=color, linestyles=line, label=label)
 
     else:
         return None, None
@@ -200,3 +218,4 @@ def plot(xdata=None, ydata=None, marker=None, line="-", color=None, label=None, 
         plt.show()
 
     return fig, ax
+
